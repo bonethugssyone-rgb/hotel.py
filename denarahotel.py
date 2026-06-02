@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import io
 
 # ==========================================
-# 1. KONFIGURASI MASTER DATA HOTEL
+# 1. KONFIGURASI MASTER DATA HOTEL & USER
 # ==========================================
 TARIF_KAMAR = {
     "Standard": 300000,
@@ -12,7 +12,6 @@ TARIF_KAMAR = {
     "Suite": 800000
 }
 
-# Membuat daftar nomor kamar statis berdasarkan tipe (Master Room List)
 MASTER_KAMAR = {
     "Standard": [f"10{i}" for i in range(1, 10)],  # 101 - 109
     "Deluxe": [f"20{i}" for i in range(1, 10)],    # 201 - 209
@@ -21,11 +20,23 @@ MASTER_KAMAR = {
 
 TOTAL_KAMAR_HOTEL = sum(len(kamar) for kamar in MASTER_KAMAR.values())
 
+# Data Akun Login Karyawan/Admin Hotel
+USER_CREDENTIALS = {
+    "admin": "admin123",
+    "resepsionis": "hotel123"
+}
+
 # ==========================================
-# 2. INITIALIZATION DATA AWAL (ARRAY DI SESSION STATE)
+# 2. INITIALIZATION DATA (SESSION STATE)
 # ==========================================
+# Status Login
+if 'is_logged_in' not in st.session_state:
+    st.session_state.is_logged_in = False
+if 'current_user' not in st.session_state:
+    st.session_state.current_user = ""
+
+# Data Array Reservasi
 if 'reservasi' not in st.session_state:
-    # Seeding data awal agar dashboard langsung terlihat dinamis saat presentasi
     st.session_state.reservasi = [
         {
             "nama": "Andi",
@@ -56,7 +67,6 @@ if 'reservasi' not in st.session_state:
         }
     ]
 
-# Mengambil array aktif dari session state
 arr_reservasi = st.session_state.reservasi
 
 # ==========================================
@@ -68,15 +78,54 @@ def hitung_hari(ci, co):
     return (co - ci).days
 
 # ==========================================
-# 4. STREAMLIT UI & INTERFACE
+# 4. HALAMAN LOGIN (IF NOT LOGGED IN)
 # ==========================================
 st.set_page_config(page_title="Sistem Reservasi Hotel Profesional", layout="wide", page_icon="🏨")
 
-st.title("🏨 Sistem Reservasi Hotel Berbasis Array")
-st.caption("Aplikasi Sistem Hotel Dinamis Menggunakan Struktur Data Array (List of Dictionaries) - Python & Streamlit")
+if not st.session_state.is_logged_in:
+    st.markdown("<h2 style='text-align: center;'>🏨 Sistem Informasi Reservasi Hotel</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>Silahkan login terlebih dahulu untuk mengakses sistem administrasi hotel berbasis Array.</p>", unsafe_allow_html=True)
+    
+    col_login_1, col_login_2, col_login_3 = st.columns([1, 1.5, 1])
+    
+    with col_login_2:
+        st.markdown("---")
+        with st.form("Form_Login"):
+            st.subheader("🔒 Login Admin / Resepsionis")
+            username_input = st.text_input("Username", placeholder="Masukkan username Anda...")
+            password_input = st.text_input("Password", type="password", placeholder="Masukkan password Anda...")
+            submit_login = st.form_submit_button("Masuk ke Sistem", type="primary")
+            
+            if submit_login:
+                # Validasi akun login
+                if username_input in USER_CREDENTIALS and USER_CREDENTIALS[username_input] == password_input:
+                    st.session_state.is_logged_in = True
+                    st.session_state.current_user = username_input
+                    st.success(f"Selamat Datang {username_input}! Mengalihkan halaman...")
+                    st.rerun()
+                else:
+                    st.error("Username atau Password salah! Silahkan coba lagi.")
+        st.info("💡 **Tips Demo Dosen:** Gunakan username: `admin` dan password: `admin123`")
+    st.stop()  # Menghentikan eksekusi kode di bawah jika user belum berhasil login
+
+# ==========================================
+# 5. HALAMAN UTAMA APLIKASI (IF LOGGED IN)
+# ==========================================
+# Header Aplikasi & Informasi User Login
+col_head_1, col_head_2 = st.columns([4, 1])
+with col_head_1:
+    st.title("🏨 Sistem Reservasi Hotel Berbasis Array")
+    st.caption("Aplikasi Pemesanan Kamar Dinamis Menggunakan Struktur Data Array (List of Dictionaries)")
+with col_head_2:
+    st.markdown(f"<div style='text-align: right; padding-top: 20px;'>👤 User: <b>{st.session_state.current_user.upper()}</b></div>", unsafe_allow_html=True)
+    if st.button("🚪 Logout / Keluar", type="secondary", use_container_width=True):
+        st.session_state.is_logged_in = False
+        st.session_state.current_user = ""
+        st.rerun()
+
 st.markdown("---")
 
-# Menu Navigasi di Sidebar
+# Menu Navigasi Utama di Sidebar setelah Login
 menu = st.sidebar.radio("📌 Navigasi Fitur / Menu:", [
     "🏨 1. Dashboard Hotel & Laporan",
     "➕ 2. Tambah Reservasi",
@@ -98,7 +147,6 @@ if menu == "🏨 1. Dashboard Hotel & Laporan":
     total_reservasi = len(arr_reservasi)
     total_pendapatan = sum(item['total_biaya'] for item in arr_reservasi)
     
-    # Tampilan Informasi Ringkas Utama (Metrik Utama)
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Total Kamar Tersedia", f"{TOTAL_KAMAR_HOTEL} Kamar")
     col2.metric("Kamar Terisi 🔴", f"{total_terisi} Kamar")
@@ -111,11 +159,9 @@ if menu == "🏨 1. Dashboard Hotel & Laporan":
     
     if arr_reservasi:
         df_laporan = pd.DataFrame(arr_reservasi)
-        
         col_lap1, col_lap2 = st.columns(2)
         with col_lap1:
             st.info("📊 **Metrik Favorit Tamu:**")
-            # Menghitung tipe kamar terlaris secara dinamis
             tipe_terbanyak = df_laporan['tipe'].value_counts().idxmax()
             jumlah_terbanyak = df_laporan['tipe'].value_counts().max()
             st.write(f"* **Kategori Kamar Terlaris:** Kamar Tipe *{tipe_terbanyak}* ({jumlah_terbanyak} kali dipesan)")
@@ -133,19 +179,14 @@ if menu == "🏨 1. Dashboard Hotel & Laporan":
 # FITUR 2 & 8: TAMBAH RESERVASI & PERHITUNGAN BIAYA OTOMATIS
 elif menu == "➕ 2. Tambah Reservasi":
     st.header("📝 Formulir Pendaftaran Tamu Baru")
-    
-    # Ambil list kamar yang saat ini sedang dipakai/terisi
     kamar_terisi = [item['kamar'] for item in arr_reservasi]
     
     col_f1, col_f2 = st.columns(2)
-    
     with col_f1:
         nama = st.text_input("Nama Lengkap Tamu:")
         tipe_kamar = st.selectbox("Pilih Tipe Kamar:", ["Standard", "Deluxe", "Suite"])
         
-        # Saring nomor kamar secara dinamis berdasarkan Tipe Kamar dan Kamar yang belum terisi
         kamar_tersedia_pilihan = [k for k in MASTER_KAMAR[tipe_kamar] if k not in kamar_terisi]
-        
         if kamar_tersedia_pilihan:
             no_kamar = st.selectbox("Pilih Nomor Kamar yang Tersedia:", kamar_tersedia_pilihan)
         else:
@@ -156,10 +197,8 @@ elif menu == "➕ 2. Tambah Reservasi":
 
     with col_f2:
         check_in = st.date_input("Tanggal Mulai Check In:", datetime.today())
-        # Check out otomatis minimal besoknya hari dari tanggal check in
         check_out = st.date_input("Tanggal Rencana Check Out:", datetime.today() + timedelta(days=1))
         
-        # Perhitungan Otomatis Hari dan Tarif Kamar
         lama_menginap = hitung_hari(check_in, check_out)
         tarif_per_malam = TARIF_KAMAR[tipe_kamar]
         total_biaya = lama_menginap * tarif_per_malam
@@ -170,7 +209,6 @@ elif menu == "➕ 2. Tambah Reservasi":
         st.subheader(f"Total Tagihan: Rp {total_biaya:,}")
         st.caption(f"Rumus Perhitungan: {lama_menginap} Hari × Rp {tarif_per_malam:,}")
 
-    # Tombol submit untuk menambahkan data ke dalam array (Append)
     if st.button("Simpan Data Pemesanan (Append Array)", type="primary"):
         if not nama:
             st.error("Nama tamu tidak boleh kosong!")
@@ -179,7 +217,6 @@ elif menu == "➕ 2. Tambah Reservasi":
         elif check_in >= check_out:
             st.error("Tanggal Check Out harus lebih lambat dari tanggal Check In!")
         else:
-            # OPERASI ARRAY: Menambahkan Dictionary baru ke dalam List Array
             data_baru = {
                 "nama": nama,
                 "kamar": no_kamar,
@@ -197,11 +234,8 @@ elif menu == "➕ 2. Tambah Reservasi":
 # FITUR 3: CEK KETERSEDIAAN KAMAR
 elif menu == "🔍 3. Cek Ketersediaan Kamar":
     st.header("🔎 Panel Pengecekan Status Kamar")
-    st.write("Gunakan fitur ini untuk melihat secara real-time kamar mana saja yang sudah terisi dan masih kosong.")
-    
     kamar_terisi = [item['kamar'] for item in arr_reservasi]
     
-    # Tampilkan Grid Kamar Berdasarkan Tipe
     for tipe, daftar_kamar in MASTER_KAMAR.items():
         st.subheader(f"Tipe Kamar: {tipe} (Tarif: Rp {TARIF_KAMAR[tipe]:,} / malam)")
         cols = st.columns(len(daftar_kamar))
@@ -209,7 +243,6 @@ elif menu == "🔍 3. Cek Ketersediaan Kamar":
         for idx, room in enumerate(daftar_kamar):
             with cols[idx]:
                 if room in kamar_terisi:
-                    # Cari nama pengisi kamar tersebut
                     nama_tamu = next(item['nama'] for item in arr_reservasi if item['kamar'] == room)
                     st.error(f"🛏️ **{room}**\n\n🔴 Terisi\n\n({nama_tamu})")
                 else:
@@ -220,7 +253,6 @@ elif menu == "🔍 3. Cek Ketersediaan Kamar":
 elif menu == "📋 4. Daftar & Cari Reservasi":
     st.header("📋 Pusat Data Reservasi Terdaftar")
     
-    # Opsi Pencarian Data (Fitur 5)
     st.subheader("🔍 Filter Pencarian Data (Implementasi Linear Search)")
     col_c1, col_c2 = st.columns([1, 2])
     with col_c1:
@@ -228,7 +260,6 @@ elif menu == "📋 4. Daftar & Cari Reservasi":
     with col_c2:
         keyword = st.text_input("Ketikkan kata kunci yang ingin dicari (Real-time):")
         
-    # Proses Menyaring Array secara Manual (Traversal & Pencarian)
     hasil_pencarian = []
     for item in arr_reservasi:
         if keyword:
@@ -237,14 +268,11 @@ elif menu == "📋 4. Daftar & Cari Reservasi":
             elif opsi_cari == "Nomor Kamar" and keyword.strip() == item['kamar']:
                 hasil_pencarian.append(item)
         else:
-            # Jika kolom keyword kosong, tampilkan seluruh isi Array (Traversal)
             hasil_pencarian.append(item)
             
-    # Menampilkan Hasil dalam Tampilan Tabel Profesional (Fitur 4)
     st.subheader("📄 Hasil Struktur Data Array Saat Ini")
     if hasil_pencarian:
         df_display = pd.DataFrame(hasil_pencarian)
-        # Penamaan ulang kolom tabel agar rapi saat dilihat user
         df_display.columns = ['Nama Tamu', 'No. Kamar', 'Tipe Kamar', 'Tanggal Check In', 'Tanggal Check Out', 'No. Telepon', 'Total Pendapatan (Rp)']
         st.dataframe(df_display, use_container_width=True)
     else:
@@ -258,11 +286,9 @@ elif menu == "✏️ 5. Edit Reservasi":
     if not arr_reservasi:
         st.warning("Tidak ada data reservasi yang tersedia untuk diubah.")
     else:
-        # Tampilkan opsi berdasarkan indeks array asli
         pilihan_edit = [f"{i} | Kamar {item['kamar']} - Atas Nama: {item['nama']}" for i, item in enumerate(arr_reservasi)]
         pilihan_terpilih = st.selectbox("Pilih data reservasi yang ingin Anda update:", pilihan_edit)
         
-        # Ambil indeks asli array dari string pilihan
         indeks_array = int(pilihan_terpilih.split(" | ")[0])
         data_lama = arr_reservasi[indeks_array]
         
@@ -282,7 +308,6 @@ elif menu == "✏️ 5. Edit Reservasi":
             new_ci = st.date_input("Ubah Tanggal Check In:", value=ci_date)
             new_co = st.date_input("Ubah Tanggal Check Out:", value=co_date)
             
-            # Hitung ulang tarif secara otomatis
             new_hari = hitung_hari(new_ci, new_co)
             new_biaya = new_hari * TARIF_KAMAR[new_tipe]
             
@@ -290,7 +315,6 @@ elif menu == "✏️ 5. Edit Reservasi":
             st.write(f"Kalkulasi Biaya Baru: **Rp {new_biaya:,}**")
             
         if st.button("Simpan Pembaruan Data (Update Array Index)"):
-            # OPERASI ARRAY: Memperbarui nilai dictionary pada indeks tertentu
             st.session_state.reservasi[indeks_array] = {
                 "nama": new_nama,
                 "kamar": new_kamar,
@@ -319,9 +343,7 @@ elif menu == "❌ 6. Pembatalan Reservasi":
         kamar_target = arr_reservasi[indeks_batal]['kamar']
         
         st.warning(f"Apakah Anda yakin ingin menghapus transaksi {nama_target} di Kamar {kamar_target}?")
-        
         if st.button("Ya, Batalkan Reservasi (Delete dari Array)", type="primary"):
-            # OPERASI ARRAY: Menghapus data dari list menggunakan fungsi pop berdasarkan indeks
             st.session_state.reservasi.pop(indeks_batal)
             st.success(f"💥 Reservasi {nama_target} berhasil dibatalkan. Kamar {kamar_target} sekarang kembali kosong!")
             st.rerun()
@@ -330,14 +352,11 @@ elif menu == "❌ 6. Pembatalan Reservasi":
 # FITUR 10: EXPORT DATA KE EXCEL
 elif menu == "📥 7. Export Data ke Excel":
     st.header("📥 Export Laporan Akhir Ke File Excel (.xlsx)")
-    st.write("Fitur tambahan nilai plus untuk mengunduh seluruh isi data array lokal sistem ke spreadsheet.")
     
     if arr_reservasi:
-        # Mengubah array of dictionary menjadi Pandas DataFrame
         df_excel = pd.DataFrame(arr_reservasi)
         df_excel.columns = ['Nama Penyewa', 'Nomor Kamar', 'Tipe Kamar', 'Tanggal CheckIn', 'Tanggal CheckOut', 'Kontak Telepon', 'Total Transaksi (Rp)']
         
-        # Proses ekspor data menggunakan buffer memory IO stream
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
             df_excel.to_excel(writer, index=False, sheet_name='Data_Reservasi_Hotel')
