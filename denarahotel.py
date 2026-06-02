@@ -28,6 +28,7 @@ if 'current_user' not in st.session_state:
 if 'last_invoice' not in st.session_state:
     st.session_state.last_invoice = None
 
+# Struktur Array Awal yang sudah diperbaiki agar tidak KeyError
 if 'reservasi' not in st.session_state:
     st.session_state.reservasi = [
         {
@@ -112,7 +113,7 @@ st.markdown("---")
 
 menu = st.sidebar.radio("📌 Navigasi Fitur:", [
     "Dashboard Hotel & Laporan",
-    "Tambah Reservasi & Struk",  # Update nama menu agar mencakup struk
+    "Tambah Reservasi & Struk",
     "Cek Ketersediaan Kamar",
     "Daftar Reservasi",
     "Pencarian Reservasi",
@@ -190,7 +191,6 @@ elif menu == "Tambah Reservasi & Struk":
             elif no_kamar in kamar_terpakai:
                 st.error(f"Kamar {no_kamar} sudah terisi (Double Booking)!")
             else:
-                # Membuat ID Nota Unik otomatis berdasarkan panjang array
                 id_nota_baru = f"HTL-{len(arr_reservasi) + 1:03d}"
                 
                 # OPERASI ARRAY: Append
@@ -205,13 +205,11 @@ elif menu == "Tambah Reservasi & Struk":
                     "total_biaya": total_biaya
                 }
                 st.session_state.reservasi.append(data_baru)
-                # Menyimpan data struk terakhir untuk ditampilkan di layar sebelah kanan
                 st.session_state.last_invoice = data_baru
                 st.success("Reservasi Berhasil Ditambahkan!")
                 st.rerun()
 
     with col_struk:
-        # FITUR 10: Tampilan Stak/Struk Nota Digital
         st.subheader("🧾 Struk Bukti Reservasi")
         if st.session_state.last_invoice is not None:
             struk = st.session_state.last_invoice
@@ -227,7 +225,6 @@ elif menu == "Tambah Reservasi & Struk":
             </style>
             """, unsafe_allow_html=True)
             
-            # Membuat format struk belanja teks kasir konvensional
             konten_struk = f"""
 ====================================
          HOTEL RESERVATION          
@@ -351,7 +348,6 @@ elif menu == "Edit Reservasi":
                 "telepon": data_lama['telepon'],
                 "total_biaya": new_biaya
             }
-            # Jika yang di-edit adalah struk terakhir yang aktif, update juga di layar struk
             if st.session_state.last_invoice and st.session_state.last_invoice['id_nota'] == data_lama['id_nota']:
                 st.session_state.last_invoice = st.session_state.reservasi[idx]
                 
@@ -377,7 +373,6 @@ elif menu == "Pembatalan Reservasi":
         id_nota_target = arr_reservasi[idx_batal]['id_nota']
         
         if st.button("Batalkan Reservasi"):
-            # Jika data struk yang sedang dilihat dihapus, kosongkan layar struk
             if st.session_state.last_invoice and st.session_state.last_invoice['id_nota'] == id_nota_target:
                 st.session_state.last_invoice = None
                 
