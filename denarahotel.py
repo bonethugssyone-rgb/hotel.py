@@ -101,4 +101,4 @@ col_head_1, col_head_2 = st.columns([4, 1])
 with col_head_1:
     st.title("🏨 Sistem Reservasi Hotel Berbasis Array Menggunakan Python dan Streamlit")
 with col_head_2:
-    st.markdown(f"<div style='text-align: right; padding-top: 20px;'>🔑 Staf: <b>{st.session});
+    st.markdown(f"<div style='text-align: right; padding-top: 20px;'>🔑 Staf: <b>{st.session}");
