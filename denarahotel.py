@@ -175,4 +175,180 @@ elif menu == "➕ 2. Tambah Reservasi":
         if not nama:
             st.error("Nama tamu tidak boleh kosong!")
         elif no_kamar is None:
-            st.error("Pendaftaran
+            st.error("Pendaftaran gagal karena tidak ada kamar tersedia.")
+        elif check_in >= check_out:
+            st.error("Tanggal Check Out harus lebih lambat dari tanggal Check In!")
+        else:
+            # OPERASI ARRAY: Menambahkan Dictionary baru ke dalam List Array
+            data_baru = {
+                "nama": nama,
+                "kamar": no_kamar,
+                "tipe": tipe_kamar,
+                "check_in": str(check_in),
+                "check_out": str(check_out),
+                "telepon": telepon,
+                "total_biaya": total_biaya
+            }
+            st.session_state.reservasi.append(data_baru)
+            st.success(f"🎉 Reservasi Berhasil Ditambahkan! Kamar {no_kamar} resmi dipesan oleh {nama}.")
+            st.balloons()
+
+
+# FITUR 3: CEK KETERSEDIAAN KAMAR
+elif menu == "🔍 3. Cek Ketersediaan Kamar":
+    st.header("🔎 Panel Pengecekan Status Kamar")
+    st.write("Gunakan fitur ini untuk melihat secara real-time kamar mana saja yang sudah terisi dan masih kosong.")
+    
+    kamar_terisi = [item['kamar'] for item in arr_reservasi]
+    
+    # Tampilkan Grid Kamar Berdasarkan Tipe
+    for tipe, daftar_kamar in MASTER_KAMAR.items():
+        st.subheader(f"Tipe Kamar: {tipe} (Tarif: Rp {TARIF_KAMAR[tipe]:,} / malam)")
+        cols = st.columns(len(daftar_kamar))
+        
+        for idx, room in enumerate(daftar_kamar):
+            with cols[idx]:
+                if room in kamar_terisi:
+                    # Cari nama pengisi kamar tersebut
+                    nama_tamu = next(item['nama'] for item in arr_reservasi if item['kamar'] == room)
+                    st.error(f"🛏️ **{room}**\n\n🔴 Terisi\n\n({nama_tamu})")
+                else:
+                    st.success(f"🛏️ **{room}**\n\n🟢 Tersedia")
+
+
+# FITUR 4 & 5: DAFTAR RESERVASI (TRAVERSAL) & PENCARIAN RESERVASI (SEARCH)
+elif menu == "📋 4. Daftar & Cari Reservasi":
+    st.header("📋 Pusat Data Reservasi Terdaftar")
+    
+    # Opsi Pencarian Data (Fitur 5)
+    st.subheader("🔍 Filter Pencarian Data (Implementasi Linear Search)")
+    col_c1, col_c2 = st.columns([1, 2])
+    with col_c1:
+        opsi_cari = st.selectbox("Cari Berdasarkan Kolom:", ["Nama Tamu", "Nomor Kamar"])
+    with col_c2:
+        keyword = st.text_input("Ketikkan kata kunci yang ingin dicari (Real-time):")
+        
+    # Proses Menyaring Array secara Manual (Traversal & Pencarian)
+    hasil_pencarian = []
+    for item in arr_reservasi:
+        if keyword:
+            if opsi_cari == "Nama Tamu" and keyword.lower() in item['nama'].lower():
+                hasil_pencarian.append(item)
+            elif opsi_cari == "Nomor Kamar" and keyword.strip() == item['kamar']:
+                hasil_pencarian.append(item)
+        else:
+            # Jika kolom keyword kosong, tampilkan seluruh isi Array (Traversal)
+            hasil_pencarian.append(item)
+            
+    # Menampilkan Hasil dalam Tampilan Tabel Profesional (Fitur 4)
+    st.subheader("📄 Hasil Struktur Data Array Saat Ini")
+    if hasil_pencarian:
+        df_display = pd.DataFrame(hasil_pencarian)
+        # Penamaan ulang kolom tabel agar rapi saat dilihat user
+        df_display.columns = ['Nama Tamu', 'No. Kamar', 'Tipe Kamar', 'Tanggal Check In', 'Tanggal Check Out', 'No. Telepon', 'Total Pendapatan (Rp)']
+        st.dataframe(df_display, use_container_width=True)
+    else:
+        st.warning("Data pencarian tidak ditemukan dalam index array kami.")
+
+
+# FITUR 6: EDIT RESERVASI (UPDATE ARRAY)
+elif menu == "✏️ 5. Edit Reservasi":
+    st.header("✏️ Modifikasi & Perubahan Data Reservasi (Update Array)")
+    
+    if not arr_reservasi:
+        st.warning("Tidak ada data reservasi yang tersedia untuk diubah.")
+    else:
+        # Tampilkan opsi berdasarkan indeks array asli
+        pilihan_edit = [f"{i} | Kamar {item['kamar']} - Atas Nama: {item['nama']}" for i, item in enumerate(arr_reservasi)]
+        pilihan_terpilih = st.selectbox("Pilih data reservasi yang ingin Anda update:", pilihan_edit)
+        
+        # Ambil indeks asli array dari string pilihan
+        indeks_array = int(pilihan_terpilih.split(" | ")[0])
+        data_lama = arr_reservasi[indeks_array]
+        
+        st.markdown("---")
+        st.subheader(f"Form Pembaruan Data Index Ke- {indeks_array}")
+        
+        col_ed1, col_ed2 = st.columns(2)
+        with col_ed1:
+            new_nama = st.text_input("Ubah Nama Tamu:", value=data_lama['nama'])
+            new_tipe = st.selectbox("Ubah Tipe Kamar:", ["Standard", "Deluxe", "Suite"], index=["Standard", "Deluxe", "Suite"].index(data_lama['tipe']))
+            new_kamar = st.text_input("Ubah Nomor Kamar:", value=data_lama['kamar'])
+            new_telp = st.text_input("Ubah Nomor Telepon:", value=data_lama['telepon'])
+            
+        with col_ed2:
+            ci_date = datetime.strptime(data_lama['check_in'], "%Y-%m-%d")
+            co_date = datetime.strptime(data_lama['check_out'], "%Y-%m-%d")
+            new_ci = st.date_input("Ubah Tanggal Check In:", value=ci_date)
+            new_co = st.date_input("Ubah Tanggal Check Out:", value=co_date)
+            
+            # Hitung ulang tarif secara otomatis
+            new_hari = hitung_hari(new_ci, new_co)
+            new_biaya = new_hari * TARIF_KAMAR[new_tipe]
+            
+            st.write(f"Durasi Tinggal Baru: **{new_hari} Malam**")
+            st.write(f"Kalkulasi Biaya Baru: **Rp {new_biaya:,}**")
+            
+        if st.button("Simpan Pembaruan Data (Update Array Index)"):
+            # OPERASI ARRAY: Memperbarui nilai dictionary pada indeks tertentu
+            st.session_state.reservasi[indeks_array] = {
+                "nama": new_nama,
+                "kamar": new_kamar,
+                "tipe": new_tipe,
+                "check_in": str(new_ci),
+                "check_out": str(new_co),
+                "telepon": new_telp,
+                "total_biaya": new_biaya
+            }
+            st.success("✅ Data Array berhasil diperbarui (di-update)!")
+            st.rerun()
+
+
+# FITUR 7: PEMBATALAN RESERVASI (DELETE ARRAY)
+elif menu == "❌ 6. Pembatalan Reservasi":
+    st.header("❌ Pembatalan & Penghapusan Reservasi")
+    
+    if not arr_reservasi:
+        st.warning("Belum ada data reservasi aktif di sistem.")
+    else:
+        pilihan_batal = [f"{i} | Tamu: {item['nama']} (Kamar {item['kamar']})" for i, item in enumerate(arr_reservasi)]
+        batal_terpilih = st.selectbox("Pilih reservasi yang akan dibatalkan secara permanen:", pilihan_batal)
+        
+        indeks_batal = int(batal_terpilih.split(" | ")[0])
+        nama_target = arr_reservasi[indeks_batal]['nama']
+        kamar_target = arr_reservasi[indeks_batal]['kamar']
+        
+        st.warning(f"Apakah Anda yakin ingin menghapus transaksi {nama_target} di Kamar {kamar_target}?")
+        
+        if st.button("Ya, Batalkan Reservasi (Delete dari Array)", type="primary"):
+            # OPERASI ARRAY: Menghapus data dari list menggunakan fungsi pop berdasarkan indeks
+            st.session_state.reservasi.pop(indeks_batal)
+            st.success(f"💥 Reservasi {nama_target} berhasil dibatalkan. Kamar {kamar_target} sekarang kembali kosong!")
+            st.rerun()
+
+
+# FITUR 10: EXPORT DATA KE EXCEL
+elif menu == "📥 7. Export Data ke Excel":
+    st.header("📥 Export Laporan Akhir Ke File Excel (.xlsx)")
+    st.write("Fitur tambahan nilai plus untuk mengunduh seluruh isi data array lokal sistem ke spreadsheet.")
+    
+    if arr_reservasi:
+        # Mengubah array of dictionary menjadi Pandas DataFrame
+        df_excel = pd.DataFrame(arr_reservasi)
+        df_excel.columns = ['Nama Penyewa', 'Nomor Kamar', 'Tipe Kamar', 'Tanggal CheckIn', 'Tanggal CheckOut', 'Kontak Telepon', 'Total Transaksi (Rp)']
+        
+        # Proses ekspor data menggunakan buffer memory IO stream
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            df_excel.to_excel(writer, index=False, sheet_name='Data_Reservasi_Hotel')
+        buffer.seek(0)
+        
+        st.download_button(
+            label="💾 Download Laporan Excel Resmi",
+            data=buffer,
+            file_name=f"Laporan_Sistem_Hotel_{datetime.today().strftime('%Y-%m-%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        st.success("File Excel berhasil diproduksi secara dinamis! Klik tombol di atas untuk mengunduh.")
+    else:
+        st.error("Gagal melakukan export karena tidak ada indeks data di dalam Array.")
