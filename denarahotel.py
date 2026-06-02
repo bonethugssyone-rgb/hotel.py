@@ -35,7 +35,7 @@ def kamar_kosong():
 def total_pendapatan():
     total = 0
     for r in st.session_state.reservasi:
-        total += r["total"]
+        total += r["total_pendapatan"]
     return total
 
 def cek_kamar(no_kamar):
@@ -68,7 +68,7 @@ if menu == "Dashboard":
     st.metric("Kamar Terisi", kamar_terisi())
     st.metric("Kamar Kosong", kamar_kosong())
     st.metric("Total Reservasi", len(st.session_state.reservasi))
-    st.metric("Pendapatan", f"Rp {total_pendapatan():,}")
+    st.metric("Pendapatan", f"Rp {total_pendapatan():}")
 
 # =========================
 # 2. TAMBAH RESERVASI
