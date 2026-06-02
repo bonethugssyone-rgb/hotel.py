@@ -35,7 +35,8 @@ def kamar_kosong():
 def total_pendapatan():
     total = 0
     for r in st.session_state.reservasi:
-        total += r["total_pendapatan"]
+        if "total" in r:
+            total += r["total"]
     return total
 
 def cek_kamar(no_kamar):
@@ -45,7 +46,7 @@ def cek_kamar(no_kamar):
     return True
 
 # =========================
-# SIDEBAR MENU
+# MENU
 # =========================
 menu = st.sidebar.selectbox("Menu", [
     "Dashboard",
@@ -55,7 +56,7 @@ menu = st.sidebar.selectbox("Menu", [
     "Cari Reservasi",
     "Edit Reservasi",
     "Hapus Reservasi",
-    "Laporan & Export"
+    "Pembayaran & Struk"
 ])
 
 # =========================
@@ -68,7 +69,7 @@ if menu == "Dashboard":
     st.metric("Kamar Terisi", kamar_terisi())
     st.metric("Kamar Kosong", kamar_kosong())
     st.metric("Total Reservasi", len(st.session_state.reservasi))
-    st.metric("Pendapatan", f"Rp {total_pendapatan():}")
+    st.metric("Pendapatan", f"Rp {total_pendapatan():,}")
 
 # =========================
 # 2. TAMBAH RESERVASI
@@ -98,7 +99,8 @@ elif menu == "Tambah Reservasi":
                 "checkout": checkout,
                 "telp": telp,
                 "hari": hari,
-                "total": total
+                "total": total,
+                "status": "Belum Lunas"
             }
 
             st.session_state.reservasi.append(data)
@@ -163,6 +165,14 @@ elif menu == "Edit Reservasi":
                 r["nama"] = nama
                 r["checkin"] = checkin
                 r["checkout"] = checkout
+
+                # hitung ulang
+                hari = hitung_hari(checkin, checkout)
+                total = hitung_biaya(r["tipe"], hari)
+
+                r["hari"] = hari
+                r["total"] = total
+
                 st.success("Data berhasil diupdate")
 
 # =========================
@@ -180,27 +190,76 @@ elif menu == "Hapus Reservasi":
                 st.success("Reservasi berhasil dihapus")
 
 # =========================
-# 8. LAPORAN & EXPORT
+# 8. PEMBAYARAN & STRUK
 # =========================
-elif menu == "Laporan & Export":
-    st.title("📊 Laporan")
+elif menu == "Pembayaran & Struk":
+    st.title("💳 Pembayaran & Struk")
 
-    total_res = len(st.session_state.reservasi)
-    total_uang = total_pendapatan()
+    if not st.session_state.reservasi:
+        st.warning("Belum ada reservasi")
+    else:
+        kamar = st.number_input("Masukkan Nomor Kamar")
 
-    st.write(f"Total Reservasi : {total_res}")
-    st.write(f"Pendapatan : Rp {total_uang:,}")
+        data_ditemukan = None
+        for r in st.session_state.reservasi:
+            if r["kamar"] == kamar:
+                data_ditemukan = r
+                break
 
-    if st.session_state.reservasi:
-        df = pd.DataFrame(st.session_state.reservasi)
+        if data_ditemukan:
+            st.subheader("Detail Reservasi")
+            st.write(f"Nama : {data_ditemukan['nama']}")
+            st.write(f"Kamar : {data_ditemukan['kamar']}")
+            st.write(f"Tipe : {data_ditemukan['tipe']}")
+            st.write(f"Lama Inap : {data_ditemukan['hari']} hari")
+            st.write(f"Total : Rp {data_ditemukan['total']:,}")
+            st.write(f"Status : {data_ditemukan.get('status','Belum Lunas')}")
 
-        # Export Excel
-        file = "laporan_hotel.xlsx"
-        df.to_excel(file, index=False)
+            metode = st.selectbox("Metode Pembayaran", ["Cash", "Transfer"])
+            bayar = st.number_input("Jumlah Bayar", min_value=0)
 
-        with open(file, "rb") as f:
-            st.download_button(
-                label="Download Excel",
-                data=f,
-                file_name="laporan_hotel.xlsx"
-            )
+            if st.button("Bayar"):
+                if bayar < data_ditemukan["total"]:
+                    st.error("Uang kurang!")
+                else:
+                    kembalian = bayar - data_ditemukan["total"]
+
+                    data_ditemukan["metode"] = metode
+                    data_ditemukan["bayar"] = bayar
+                    data_ditemukan["kembalian"] = kembalian
+                    data_ditemukan["status"] = "Lunas"
+
+                    st.success("Pembayaran berhasil")
+
+                    struk = f"""
+==============================
+        HOTEL PYTHON
+==============================
+Nama        : {data_ditemukan['nama']}
+Kamar       : {data_ditemukan['kamar']}
+Tipe        : {data_ditemukan['tipe']}
+Check In    : {data_ditemukan['checkin']}
+Check Out   : {data_ditemukan['checkout']}
+Lama Inap   : {data_ditemukan['hari']} hari
+
+------------------------------
+Total       : Rp {data_ditemukan['total']:,}
+Bayar       : Rp {bayar:,}
+Kembalian   : Rp {kembalian:,}
+Metode      : {metode}
+Status      : LUNAS
+==============================
+   TERIMA KASIH 🙏
+==============================
+"""
+
+                    st.text(struk)
+
+                    st.download_button(
+                        label="Download Struk",
+                        data=struk,
+                        file_name=f"struk_kamar_{kamar}.txt"
+                    )
+
+        else:
+            st.error("Data tidak ditemukan")
