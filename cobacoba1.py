@@ -1,13 +1,17 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime, date
+# ==========================================
+# IMPORT LIBRARY YANG DIBUTUHKAN
+# ==========================================
+import streamlit as st  # Library utama untuk pembuatan web app dashboard & UI
+import pandas as pd     # Library untuk manipulasi data tabel & integrasi chart bawaan
+from datetime import datetime, date  # Mengatur operasi tanggal, hitung durasi check-in/out
 
 # ==========================================
-# 1. INITIALIZATION DATA & MOCK DATABASE (ARRAY-BASED)
+# 1. INISIALISASI KONFIGURASI HALAMAN & DATABASE
 # ==========================================
+# Mengatur judul halaman pada browser tab, ikon, dan layout halaman agar melebar (wide)
 st.set_page_config(page_title="SmartStay Hotel System", layout="wide", page_icon="🏨")
 
-# Master Kamar (Dinamis)
+# Inisialisasi Kamar Master (Dinamis menggunakan Streamlit Session State agar tidak ter-reset saat web di-refresh)
 if 'kamar_db' not in st.session_state:
     st.session_state.kamar_db = {
         "101": {"tipe": "Standard Room", "harga": 300000, "status": "🟩 Tersedia"},
@@ -20,31 +24,33 @@ if 'kamar_db' not in st.session_state:
         "302": {"tipe": "Suite Room", "harga": 1200000, "status": "🟩 Tersedia"},
     }
 
-# Database Reservasi Utama (Array List of Dict)
+# Inisialisasi Database Transaksi Utama (Menampung riwayat pemesanan berupa List didalamnya terdapat Dictionary)
 if 'reservasi_db' not in st.session_state:
     st.session_state.reservasi_db = [
         {
             "id": "INV2026001", "nama": "Andi", "hp": "0812345678", "email": "andi@mail.com", "alamat": "Jakarta",
-            "kamar": "102", "tipe": "Standard Room", "check_in": "2026-06-01", "check_out": "2026-06-03",
-            "tujuan": "Liburan", "status": "Check-In", "total_biaya": 600000, "status_bayar": "PAID",
-            "metode": "Transfer BCA", "deposit_tipe": "Full Payment", "add_ons": ["Breakfast"]
+            "kamar": "102", "tipe": "Standard Room", "bed_type": "Double Bed", "layout_type": "Standard Layout",
+            "check_in": "2026-06-01", "check_out": "2026-06-03", "tujuan": "Liburan", "status": "Check-In", 
+            "total_biaya": 600000, "status_bayar": "PAID", "metode": "Transfer BCA", 
+            "deposit_tipe": "Full Payment", "add_ons": ["Breakfast"]
         },
         {
             "id": "INV2026002", "nama": "Siti Mutia", "hp": "089876543", "email": "siti@mail.com", "alamat": "Bandung",
-            "kamar": "103", "tipe": "Deluxe Room", "check_in": "2026-06-10", "check_out": "2026-06-12",
-            "tujuan": "Bisnis", "status": "Booking", "total_biaya": 1150000, "status_bayar": "🟠 Deposit Paid",
-            "metode": "DANA", "deposit_tipe": "Deposit 30%", "add_ons": ["Breakfast", "Airport Pickup"]
+            "kamar": "103", "tipe": "Deluxe Room", "bed_type": "Twin Bed", "layout_type": "Standard Layout",
+            "check_in": "2026-06-10", "check_out": "2026-06-12", "tujuan": "Bisnis", "status": "Booking", 
+            "total_biaya": 1150000, "status_bayar": "🟠 Deposit Paid", "metode": "DANA", 
+            "deposit_tipe": "Deposit 30%", "add_ons": ["Breakfast", "Airport Pickup"]
         }
     ]
 
-# Database Review & Feedback
+# Inisialisasi Database Review Kepuasan Pelanggan (Feedback)
 if 'reviews_db' not in st.session_state:
     st.session_state.reviews_db = [
         {"nama": "Andi", "rating": 5, "komentar": "Pelayanan sangat baik, proses check-in lancar!", "tanggal": "2026-06-03"},
         {"nama": "Budi", "rating": 4, "komentar": "Kamar bersih dan dekat pusat kota.", "tanggal": "2026-06-02"}
     ]
 
-# History Kunjungan untuk Loyalty Program (Sorting & VIP System)
+# Inisialisasi Riwayat Jumlah Kunjungan untuk Pemetaan Skema Loyalty Member/VIP
 if 'customer_history' not in st.session_state:
     st.session_state.customer_history = [
         {"nama": "Andi", "kunjungan": 12, "level": "Platinum"},
@@ -53,7 +59,7 @@ if 'customer_history' not in st.session_state:
         {"nama": "Denara", "kunjungan": 7, "level": "Gold"}
     ]
 
-# Tarif Kamar Kamus Referensi
+# Kamus Data (Dictionary) untuk Referensi Harga Kamar Pokok Per Malam
 TARIF_KAMAR = {
     "Standard Room": 300000,
     "Deluxe Room": 500000,
@@ -62,12 +68,13 @@ TARIF_KAMAR = {
 }
 
 # ==========================================
-# 2. SIDEBAR NAVIGASI UTAMA
+# 2. SIDEBAR NAVIGASI UTAMA APLIKASI
 # ==========================================
-st.sidebar.markdown("# 🏨 SmartStay Hotel")
-st.sidebar.caption("Modern Hotel Management System")
-st.sidebar.markdown("---")
+st.sidebar.markdown("# 🏨 SmartStay Hotel")  # Brand title di bagian atas sidebar
+st.sidebar.caption("Modern Hotel Management System")  # Sub-deskripsi sistem aplikasi
+st.sidebar.markdown("---")  # Garis pembatas horizontal pembentuk struktur menu
 
+# Menu Navigasi berbasis Radio Button
 menu = st.sidebar.radio("🏠 MENU UTAMA APLIKASI", [
     "Dashboard", "📝 Reservasi Baru", "🏨 Daftar Kamar", "🗺️ Room Map",
     "🔍 Cari Reservasi", "📋 Data Reservasi", "💳 Pembayaran",
@@ -75,21 +82,24 @@ menu = st.sidebar.radio("🏠 MENU UTAMA APLIKASI", [
 ])
 
 # ==========================================
-# MENU 1: DASHBOARD
+# MENU 1: DASHBOARD UTAMA
 # ==========================================
 if menu == "Dashboard":
-    st.title("🏠 Dashboard Real-Time")
+    st.title("🏠 Dashboard Real-Time")  # Judul Menu Dashboard
     
+    # Perhitungan metrik okupansi kamar secara langsung dari database kamar master
     total_kmr = len(st.session_state.kamar_db)
     terisi = sum(1 for k in st.session_state.kamar_db.values() if k["status"] == "🟥 Terisi")
     booking = sum(1 for k in st.session_state.kamar_db.values() if k["status"] == "🟨 Booking")
     kosong = total_kmr - terisi - booking
     
+    # Perhitungan data statistik dari data transaksi & review hotel
     total_rev = len(st.session_state.reservasi_db)
     total_cust = len(st.session_state.customer_history)
     pendapatan_total = sum(r["total_biaya"] for r in st.session_state.reservasi_db)
     avg_rating = sum(rev["rating"] for rev in st.session_state.reviews_db) / len(st.session_state.reviews_db) if st.session_state.reviews_db else 5.0
 
+    # Menyusun layout metrik informasi menjadi 4 kolom vertikal yang rapi
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.metric("Total Kamar", total_kmr)
     col_m1.metric("Kamar Terisi 🟥", terisi)
@@ -103,19 +113,22 @@ if menu == "Dashboard":
     st.markdown("---")
     st.subheader("📊 Analisis Grafik Pendapatan Tipe Kamar")
     
+    # Mengonversi database transaksi menjadi Dataframe Pandas untuk agregasi chart bawaan streamlit
     df_rev = pd.DataFrame(st.session_state.reservasi_db)
     if not df_rev.empty:
+        # Melakukan Grouping / pengelompokan total biaya berdasarkan tipe kamar
         df_chart = df_rev.groupby('tipe')['total_biaya'].sum()
-        st.bar_chart(df_chart)
+        st.bar_chart(df_chart)  # Menampilkan grafik batang otomatis bawaan streamlit (Tanpa matplotlib)
     else:
         st.info("Belum ada data transaksi untuk memuat grafik pendapatan.")
 
 # ==========================================
-# MENU 2: RESERVASI BARU
+# MENU 2: INPUT RESERVASI BARU (WITH BED & LAYOUT OPTIONS)
 # ==========================================
 elif menu == "📝 Reservasi Baru":
     st.title("📝 Input Reservasi Baru")
     
+    # Membagi area form input data (kiri) dan penal rekomendasi pintar otomatis (kanan)
     col_form, col_recom = st.columns([1.5, 1])
     
     with col_form:
@@ -125,21 +138,40 @@ elif menu == "📝 Reservasi Baru":
         email = st.text_input("Email")
         alamat = st.text_area("Alamat")
         
+        st.markdown("---")
+        st.subheader("Detail Preferensi Kamar")
+        
         col_f1, col_f2 = st.columns(2)
         with col_f1:
             jml_tamu = st.number_input("Jumlah Tamu", min_value=1, max_value=10, value=2)
             check_in = st.date_input("Tanggal Check In", date.today())
+            
+            # FITUR PREFERENSI BED: Dropdown pilihan konfigurasi jenis kasur
+            pilihan_bed = st.selectbox("🛏️ Jenis Tempat Tidur (Bed Type)", [
+                "Single Bed (1 Kasur Kecil)", 
+                "Double Bed (1 Kasur Besar/King/Queen)", 
+                "Twin Bed (2 Kasur Terpisah)"
+            ])
+            
         with col_f2:
             budget_max = st.number_input("Budget Maksimal Anda (Rp)", min_value=100000, value=1000000, step=50000)
             check_out = st.date_input("Tanggal Check Out", date.today() + pd.Timedelta(days=1))
+            
+            # FITUR PREFERENSI TATA LETAK: Dropdown pilihan konfigurasi struktur arsitektur interior kamar
+            pilihan_layout = st.selectbox("🚪 Tata Letak Ruangan (Room Layout)", [
+                "Standard Layout (Kamar Biasa)", 
+                "Connecting Room (Pintu Penghubung Internal)", 
+                "Family Room Layout (Spesial Rombongan)"
+            ])
             
         tujuan = st.selectbox("Tujuan Menginap", ["Liburan", "Bisnis", "Honeymoon", "Keluarga", "Staycation"])
 
     with col_recom:
         st.subheader("🤖 Smart Room Recommendation")
         
+        # Algoritma Rekomendasi Pintar Otomatis berdasarkan parameter jumlah tamu, budget, atau jenis tata letak pilihan
         rekomendasi_tipe = "Standard Room"
-        if jml_tamu >= 4 or tujuan == "Keluarga":
+        if jml_tamu >= 4 or tujuan == "Keluarga" or "Family" in pilihan_layout:
             rekomendasi_tipe = "Family Room"
         elif budget_max >= 1200000 and (tujuan == "Honeymoon" or tujuan == "Bisnis"):
             rekomendasi_tipe = "Suite Room"
@@ -151,6 +183,7 @@ elif menu == "📝 Reservasi Baru":
         st.markdown("---")
         st.subheader("🎲 Auto Room Assignment")
         
+        # Mencari nomor kamar kosong secara otomatis di dalam master database yang sesuai dengan tipe rekomendasi
         kamar_assign = None
         for no_kmr, spek in st.session_state.kamar_db.items():
             if spek["tipe"] == rekomendasi_tipe and spek["status"] == "🟩 Tersedia":
@@ -165,112 +198,101 @@ elif menu == "📝 Reservasi Baru":
 
         st.markdown("---")
         st.subheader("🎁 Additional Services (Add-Ons)")
+        # Checkbox opsional untuk penambahan layanan eksternal hotel beserta tarif tambahannya
         addons_pilihan = []
-        if st.checkbox("🍳 Breakfast Tambahan (Rp 50.000)"): addons_pappend("Breakfast")
+        if st.checkbox("🍳 Breakfast Tambahan (Rp 50.000)"): addons_pilihan.append("Breakfast")
         if st.checkbox("🛏️ Extra Bed (Rp 100.000)"): addons_pilihan.append("Extra Bed")
         if st.checkbox("🚗 Airport Pickup (Rp 150.000)"): addons_pilihan.append("Airport Pickup")
         if st.checkbox("🧺 Laundry Service (Rp 75.000)"): addons_pilihan.append("Laundry")
         if st.checkbox("🎮 Gaming Package PS5 (Rp 100.000)"): addons_pilihan.append("Gaming Package")
 
     st.markdown("---")
+    # Tombol submit pendaftaran form reservasi baru
     if st.button("Lanjutkan ke Pembayaran ➡️", type="primary"):
         if not nama or not kamar_assign:
             st.error("Nama Tamu dan Alokasi Kamar wajib dilengkapi!")
         else:
+            # Menyimpan sementara data form inputan ke dalam session state proses checkout sebelum di bayar
             st.session_state.proses_checkout = {
                 "nama": nama, "hp": hp, "email": email, "alamat": alamat,
                 "kamar": kamar_assign, "tipe": rekomendasi_tipe,
+                "bed_type": pilihan_bed, "layout_type": pilihan_layout,
                 "check_in": str(check_in), "check_out": str(check_out),
                 "tujuan": tujuan, "add_ons": addons_pilihan
             }
             st.success("Data Tersimpan! Silakan klik Menu '💳 Pembayaran' di sidebar untuk bayar.")
 
 # ==========================================
-# MENU 3: DAFTAR KAMAR (UPDATED CLASSIFICATION)
+# MENU 3: DAFTAR DETAIL INFORMASI KAMAR (KLASIFIKASI LENGKAP)
 # ==========================================
 elif menu == "🏨 Daftar Kamar":
     st.title("🏨 Klasifikasi & Spesifikasi Kamar")
     st.caption("Panduan lengkap kategori kamar berdasarkan standar manajemen hotel.")
     st.markdown("---")
     
-    # Membuat 3 Tab Kategori Utama
+    # Penggunaan elemen TABS Streamlit untuk merapikan visual 3 klasifikasi utama kamar
     tab1, tab2, tab3 = st.tabs([
         "✨ Berdasarkan Fasilitas & Ukuran", 
         "🛏️ Berdasarkan Jenis Tempat Tidur", 
         "🚪 Berdasarkan Tata Letak Ruangan"
     ])
     
+    # TAB 1: Berdasarkan Fasilitas & Ukuran Kamar
     with tab1:
         st.subheader("Kategori Kamar Sesuai Fasilitas & Dimensi")
-        
         with st.expander("🔹 Standard Room (Rp 300.000 / Malam)"):
             st.markdown("""
-            * **Deskripsi:** Kelas kamar paling dasar dengan fasilitas esensial.
+            * **Deskripsi:** Kelas kamar paling dasar dengan fasilitas esensial seperti tempat tidur, AC, TV, dan kamar mandi.
             * **Fasilitas Utama:** Tempat tidur, AC, TV LED, WiFi, Air Mineral, dan Kamar Mandi Dalam.
             * **Kapasitas:** 1-2 Orang.
             """)
-            
         with st.expander("🔹 Superior Room (Rp 450.000 / Malam)"):
             st.markdown("""
-            * **Deskripsi:** Sedikit lebih baik dari tipe standard.
-            * **Keunggulan:** Menawarkan ruangan yang lebih luas dengan interior atau pemandangan yang lebih baik.
-            * **Fasilitas Utama:** Fasilitas standard ditambah pilihan view jendela/balkon standar.
+            * **Deskripsi:** Sedikit lebih baik dari tipe standard, menawarkan ruangan yang lebih luas dengan interior atau pemandangan yang lebih baik.
             """)
-            
         with st.expander("🔹 Deluxe Room (Rp 500.000 / Malam)"):
             st.markdown("""
-            * **Deskripsi:** Kamar yang berukuran lebih luas dari tipe superior dengan desain elegan.
+            * **Deskripsi:** Kamar yang berukuran lebih luas dari superior dengan desain elegan dan fasilitas lebih lengkap (seperti area duduk atau meja kerja).
             * **Fasilitas Utama:** Smart TV, WiFi, Free Breakfast, Hair Dryer, Mini Fridge, Coffee Maker, area duduk atau meja kerja.
-            * **Kapasitas:** 2-3 Orang.
             """)
-            
         with st.expander("🔹 Suite Room (Rp 1.200.000 / Malam)"):
             st.markdown("""
-            * **Deskripsi:** Kategori mewah di mana kamar tidur terpisah secara fisik dari ruang tamu. Tipe tertinggi dari kategori ini sering disebut *Presidential Suite*.
-            * **Fasilitas Utama:** Living Room (Ruang Tamu), Smart TV 55", Mini Bar, Bathtub, Balkon pribadi, Premium Breakfast.
-            * **Kapasitas:** 2-4 Orang.
+            * **Deskripsi:** Kategori mewah di mana kamar tidur terpisah secara fisik dari ruang tamu. Tipe tertinggi dari kategori ini sering disebut Presidential Suite.
             """)
 
+    # TAB 2: Berdasarkan Jenis Tempat Tidur (Bed)
     with tab2:
         st.subheader("Pilihan Konfigurasi Tempat Tidur (Bed)")
-        
         col_b1, col_b2, col_b3 = st.columns(3)
         with col_b1:
             st.info("### 🧍 Single Room")
-            st.markdown("**Spesifikasi:**\nKamar dengan satu tempat tidur ukuran *single*. Sangat cocok untuk *solo traveler* atau perjalanan bisnis mandiri.")
+            st.markdown("Kamar dengan satu tempat tidur ukuran **single**.")
         with col_b2:
             st.info("### 👥 Double Room")
-            st.markdown("**Spesifikasi:**\nKamar dengan satu tempat tidur berukuran besar (*double*, *queen*, atau *king*) yang diperuntukkan bagi dua orang.")
+            st.markdown("Kamar dengan satu tempat tidur berukuran besar (**double, queen, atau king**) yang diperuntukkan bagi dua orang.")
         with col_b3:
             st.info("### 👥 Twin Room")
-            st.markdown("**Spesifikasi:**\nKamar yang dilengkapi dengan dua tempat tidur *single* terpisah. Sering dipilih untuk rekan kerja atau pertemanan.")
+            st.markdown("Kamar yang dilengkapi dengan **dua tempat tidur single** terpisah.")
 
+    # TAB 3: Berdasarkan Tata Letak Ruangan
     with tab3:
         st.subheader("Arsitektur & Tata Letak Interior Kamar")
-        
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             st.success("### 🚪 Connecting Room")
-            st.markdown("""
-            * **Karakteristik:** Dua kamar terpisah berdampingan yang memiliki pintu penghubung di bagian dalam.
-            * **Rekomendasi:** Sangat cocok untuk liburan keluarga besar yang menginginkan privasi sekaligus aksesibilitas mudah.
-            """)
+            st.markdown("Dua kamar terpisah yang memiliki **pintu penghubung** di bagian dalam, sangat cocok untuk liburan keluarga.")
         with col_t2:
             st.success("### 👨‍👩‍👧 Family Room (Rp 800.000 / Malam)")
-            st.markdown("""
-            * **Karakteristik:** Kamar berukuran besar yang dirancang khusus untuk rombongan keluarga.
-            * **Fasilitas Utama:** Biasanya dilengkapi beberapa tempat tidur ekstra (2 Queen Bed), Sofa besar, Breakfast untuk 4 orang, dan akses Area Bermain Anak.
-            * **Kapasitas:** 4-5 Orang.
-            """)
+            st.markdown("Kamar berukuran besar yang dirancang khusus untuk **rombongan keluarga**, biasanya dilengkapi beberapa tempat tidur ekstra.")
 
 # ==========================================
-# MENU 4: ROOM MAP
+# MENU 4: ROOM MAP VISUALISASI
 # ==========================================
 elif menu == "🗺️ Room Map":
     st.title("🗺️ Visual Room Map Status")
-    
-    cols = st.columns(4)
+    cols = st.columns(4) # Mengatur tata letak peta kamar menjadi grid 4 kolom horizontal
     idx = 0
+    # Looping item di database kamar master untuk menggambar kotak indikator status kamar
     for no_kmr, data in st.session_state.kamar_db.items():
         with cols[idx % 4]:
             if "Tersedia" in data["status"]:
@@ -282,14 +304,15 @@ elif menu == "🗺️ Room Map":
         idx += 1
 
 # ==========================================
-# MENU 5: CARI RESERVASI
+# MENU 5: CARI DATA RESERVASI TAMU
 # ==========================================
 elif menu == "🔍 Cari Reservasi":
     st.title("🔍 Cari Data Reservasi Aktif")
-    
+    # Pilihan metode pencarian filter
     kategori_cari = st.radio("Cari Berdasarkan:", ["Nama", "Nomor Kamar", "Nomor HP"], horizontal=True)
     kunci_keyword = st.text_input("Ketik Kata Kunci Pencarian:")
     
+    # Memproses pencarian data dengan mencocokkan string input pengguna ke data array reservasi
     if kunci_keyword:
         hasil_cari = []
         for r in st.session_state.reservasi_db:
@@ -307,42 +330,43 @@ elif menu == "🔍 Cari Reservasi":
             st.warning("Data tidak ditemukan.")
 
 # ==========================================
-# MENU 6: DATA RESERVASI (CRUD)
+# MENU 6: DATA MASTER RESERVASI (MANAJEMEN CRUD NYATA)
 # ==========================================
 elif menu == "📋 Data Reservasi":
     st.title("📋 Master Log Data Reservasi (CRUD)")
     
+    # Menampilkan keseluruhan log riwayat transaksi aktif hotel di dalam format dataframe interaktif
     if st.session_state.reservasi_db:
         df_master = pd.DataFrame(st.session_state.reservasi_db)
-        st.dataframe(df_master[["id", "nama", "kamar", "check_in", "check_out", "status", "total_biaya"]], use_container_width=True)
+        kolom_tampil = ["id", "nama", "kamar", "tipe", "bed_type", "layout_type", "check_in", "status"]
+        kolom_tampil = [c for c in kolom_tampil if c in df_master.columns]
+        st.dataframe(df_master[kolom_tampil], use_container_width=True)
         
         st.markdown("---")
         st.subheader("🛠️ Aksi Resepsionis")
-        
         list_id = [r["id"] for r in st.session_state.reservasi_db]
         pilih_id = st.selectbox("Pilih ID Transaksi target:", list_id)
-        
         idx_target = next((i for i, item in enumerate(st.session_state.reservasi_db) if item["id"] == pilih_id), None)
         
         if idx_target is not None:
             c1, c2, c3 = st.columns(3)
-            
+            # PROSES CHECK-IN: Mengubah status log reservasi dan merubah warna status peta kamar menjadi TERISI (Merah)
             if c1.button("Set Status: CHECK-IN 🟥"):
                 st.session_state.reservasi_db[idx_target]["status"] = "Check-In"
                 kmr = st.session_state.reservasi_db[idx_target]["kamar"]
-                if kmr in st.session_state.kamar_db:
-                    st.session_state.kamar_db[kmr]["status"] = "🟥 Terisi"
+                if kmr in st.session_state.kamar_db: st.session_state.kamar_db[kmr]["status"] = "🟥 Terisi"
                 st.success("Tamu Berhasil Check-In!")
                 st.rerun()
                 
+            # PROSES CHECK-OUT: Membebaskan status kamar kembali menjadi TERSEDIA (Hijau)
             if c2.button("Set Status: CHECK-OUT 🟩"):
                 st.session_state.reservasi_db[idx_target]["status"] = "Check-Out"
                 kmr = st.session_state.reservasi_db[idx_target]["kamar"]
-                if kmr in st.session_state.kamar_db:
-                    st.session_state.kamar_db[kmr]["status"] = "🟩 Tersedia"
+                if kmr in st.session_state.kamar_db: st.session_state.kamar_db[kmr]["status"] = "🟩 Tersedia"
                 st.success("Tamu Berhasil Check-Out!")
                 st.rerun()
                 
+            # PROSES DELETE: Menghapus data indeks transaksi pilihan dari array memori list database
             if c3.button("Hapus Bukti Transaksi ❌"):
                 st.session_state.reservasi_db.pop(idx_target)
                 st.error("Data terhapus dari array!")
@@ -351,23 +375,27 @@ elif menu == "📋 Data Reservasi":
         st.warning("Database transaksi kosong.")
 
 # ==========================================
-# MENU 7: PEMBAYARAN & SUMMARY
+# MENU 7: BILLING & KASIR PEMBAYARAN SUMMARY
 # ==========================================
 elif menu == "💳 Pembayaran":
     st.title("💳 Payment Management System")
     
+    # Validasi pencegahan akses menu kasir sebelum mengisi data pada form menu input reservasi baru
     if "proses_checkout" not in st.session_state:
         st.info("Silakan isi formulir pemesanan terlebih dahulu di Menu '📝 Reservasi Baru'.")
     else:
-        ck = st.session_state.proses_checkout
+        ck = st.session_state.proses_checkout # Ambil alias temporary data object registrasi
         
+        # Mengonversi format tanggal string ke object python datetime guna operasi hitung aritmatika selisih menginap
         d1 = datetime.strptime(ck["check_in"], "%Y-%m-%d")
         d2 = datetime.strptime(ck["check_out"], "%Y-%m-%d")
         durasi = max(1, (d2 - d1).days)
         
+        # Kalkulasi biaya harga pokok kamar dikalikan lama malam menginap
         tarif_per_malam = TARIF_KAMAR.get(ck["tipe"], 300000)
         biaya_kamar = tarif_per_malam * durasi
         
+        # Perhitungan akumulasi biaya tambahan (Add-ons) layanan eksternal pilihan
         biaya_addons = 0
         mapping_addon_harga = {"Breakfast": 50000, "Extra Bed": 100000, "Airport Pickup": 150000, "Laundry": 75000, "Gaming Package": 100000}
         for item in ck["add_ons"]:
@@ -375,25 +403,32 @@ elif menu == "💳 Pembayaran":
             
         subtotal = biaya_kamar + biaya_addons
         
-        voucher_input = st.text_input("Masukkan Kode Voucher (Opsional, Contoh: SMART10):")
+        # Sistem potongan harga menggunakan voucher promo kode khusus
+        voucher_input = st.text_input("Masukkan Kode Voucher (Opsional):")
         diskon_voucher = 0
-        if voucher_input.strip() == "SMART10":
-            diskon_voucher = 0.10 * subtotal
+        if voucher_input.strip() == "SMART10": diskon_voucher = 0.10 * subtotal
             
+        # Perhitungan nominal PPN 11% sesuai regulasi perpajakan yang berlaku
         ppn = 0.11 * (subtotal - diskon_voucher)
         total_akhir = (subtotal - diskon_voucher) + ppn
         
+        # Pemilihan termin atau skema transaksi keuangan
         pilihan_skema = st.radio("Skema Pembayaran:", ["Full Payment (Bayar 100%)", "Deposit 30%"])
-        metode_pilih = st.selectbox("Metode Pembayaran:", ["Transfer BCA", "Transfer Mandiri", "E-Wallet DANA", "OVO", "GoPay"])
+        metode_pilih = st.selectbox("Metode Pembayaran:", ["Transfer BCA", "Transfer Mandiri", "E-Wallet DANA"])
         
         st.markdown("### 📋 Payment Summary")
+        # Struktur string layout nota digital invoice kuitansi pembayaran hotel
         summary_text = f"""
 ================================================
                 PAYMENT SUMMARY                 
 ================================================
-{ck['tipe']} ({durasi} Malam)    : Rp {biaya_kamar:,}
-Total Layanan Tambahan (Add-On) : Rp {biaya_addons:,}
+Tipe Kamar                      : {ck['tipe']}
+Jenis Kasur (Bed Type)          : {ck['bed_type']}
+Tata Letak (Layout)             : {ck['layout_type']}
+Durasi Menginap                 : {durasi} Malam
 ------------------------------------------------
+Biaya Kamar Pokok               : Rp {biaya_kamar:,}
+Total Layanan Tambahan (Add-On) : Rp {biaya_addons:,}
 Subtotal                        : Rp {subtotal:,}
 Diskon Voucher                  : Rp {diskon_voucher:,}
 PPN 11%                         : Rp {ppn:,}
@@ -401,8 +436,9 @@ PPN 11%                         : Rp {ppn:,}
 TOTAL TAGIHAN                   : Rp {total_akhir:,}
 ================================================
         """
-        st.code(summary_text, language="text")
+        st.code(summary_text, language="text") # Render nota visual dengan font monospaced code block rapi
         
+        # Pengecekan skema nominal tagihan jika pelanggan memilih opsi uang muka down-payment (DP 30%)
         if pilihan_skema == "Deposit 30%":
             nilai_depo = total_akhir * 0.3
             st.warning(f"Wajib Bayar Deposit (30%): Rp {nilai_depo:,}")
@@ -410,82 +446,79 @@ TOTAL TAGIHAN                   : Rp {total_akhir:,}
         else:
             status_bayar_tag = "PAID"
             
+        # Tombol finalisasi transaksi untuk menerbitkan ID invoice unik baru ke database log master utama
         if st.button("Finalisasi Transaksi & Terbitkan Invoice 🚀", type="primary"):
             new_inv_id = f"INV2026{len(st.session_state.reservasi_db) + 1:03d}"
             
+            # Memasukkan objek dictionary data reservasi final komplit ke dalam array utama database
             st.session_state.reservasi_db.append({
                 "id": new_inv_id, "nama": ck["nama"], "hp": ck["hp"], "email": ck["email"], "alamat": ck["alamat"],
-                "kamar": ck["kamar"], "tipe": ck["tipe"], "check_in": ck["check_in"], "check_out": ck["check_out"],
-                "tujuan": ck["tujuan"], "status": "Booking", "total_biaya": total_akhir, "status_bayar": status_bayar_tag,
-                "metode": metode_pilih, "deposit_tipe": pilihan_skema, "add_ons": ck["add_ons"]
+                "kamar": ck["kamar"], "tipe": ck["tipe"], "bed_type": ck["bed_type"], "layout_type": ck["layout_type"],
+                "check_in": ck["check_in"], "check_out": ck["check_out"], "tujuan": ck["tujuan"], "status": "Booking", 
+                "total_biaya": total_akhir, "status_bayar": status_bayar_tag, "metode": metode_pilih, 
+                "deposit_tipe": pilihan_skema, "add_ons": ck["add_ons"]
             })
             
+            # Merubah status kamar pilihan pada database master menjadi BOOKING (Kuning)
             if ck["kamar"] in st.session_state.kamar_db:
                 st.session_state.kamar_db[ck["kamar"]]["status"] = "🟨 Booking"
             
+            # Menghapus berkas memori objek registrasi temporary checkout agar siklus form bersih kembali
             del st.session_state.proses_checkout
             st.success(f"Invoice {new_inv_id} Berhasil Disimpan!")
             st.rerun()
 
 # ==========================================
-# MENU 8: RIWAYAT PEMBAYARAN
+# MENU 8: RIWAYAT DATA PEMBAYARAN KASIR
 # ==========================================
 elif menu == "📜 Riwayat Pembayaran":
     st.title("📜 Auto Invoice & E-Receipt Center")
-    
     if st.session_state.reservasi_db:
         df_pay = pd.DataFrame(st.session_state.reservasi_db)
         st.table(df_pay[["id", "nama", "metode", "status_bayar", "total_biaya"]])
-    else:
+    else: 
         st.warning("Belum ada riwayat pembayaran.")
 
 # ==========================================
-# MENU 9: CUSTOMER VIP
+# MENU 9: LEADERBOARD MEMBER CUSTOMER VIP (LOYALTY SYSTEM)
 # ==========================================
 elif menu == "👤 Customer VIP":
     st.title("👤 Customer VIP Leaderboard")
-    
-    df_vip = pd.DataFrame(st.session_state.customer_history)
-    df_sorted = df_vip.sort_values(by="kunjungan", ascending=False)
-    
-    st.subheader("🏆 Papan Peringkat Loyalty Member (Sorted)")
-    st.table(df_sorted)
+    # Melakukan sorting pengurutan otomatis berdasarkan frekuensi jumlah kunjungan terbanyak (descending)
+    df_vip = pd.DataFrame(st.session_state.customer_history).sort_values(by="kunjungan", ascending=False)
+    st.table(df_vip)
 
 # ==========================================
-# MENU 10: REVIEW HOTEL
+# MENU 10: FEEDBACK REVIEW & INPUT ULASAN TAMU
 # ==========================================
 elif menu == "⭐ Review Hotel":
     st.title("⭐ Review & Rating Kepuasan")
-    
+    # Form input ulasan ulasan bagi para pelanggan hotel yang telah melakukan check-out
     with st.form("Form_Review"):
         r_nama = st.text_input("Nama Anda:")
         r_star = st.slider("Beri Bintang:", 1, 5, 5)
         r_msg = st.text_area("Tulis Komentar:")
         if st.form_submit_button("Kirim Ulasan"):
             if r_nama and r_msg:
-                st.session_state.reviews_db.append({
-                    "nama": r_nama, "rating": r_star, "komentar": r_msg, "tanggal": str(date.today())
-                })
-                st.success("Review berhasil ditambahkan!")
-                st.rerun()
+                st.session_state.reviews_db.append({"nama": r_nama, "rating": r_star, "komentar": r_msg, "tanggal": str(date.today())})
+                st.success("Review berhasil ditambahkan!"); st.rerun()
                 
     st.markdown("---")
+    # Menampilkan daftar feed ulasan komentar secara berurutan di halaman bawah form
     for row in st.session_state.reviews_db:
         st.markdown(f"**{row['nama']}** — {'⭐' * row['rating']} ({row['tanggal']})")
         st.caption(f"\"{row['komentar']}\"")
 
 # ==========================================
-# MENU 11: ANALYTICS CENTER
+# MENU 11: FORECASTING / PREDIKSI OMSET BISNIS HOTEL
 # ==========================================
 elif menu == "📊 Analytics Center":
     st.title("📊 Analytics Center & Prediksi Omset")
-    
     if st.session_state.reservasi_db:
+        # Menghitung total omset pendapatan bersih real dari database transaksi
         total_omset = sum(r["total_biaya"] for r in st.session_state.reservasi_db)
-        prediksi_omset = total_omset * 1.25
-        
         st.metric("Total Pendapatan Saat Ini", f"Rp {total_omset:,}")
-        st.metric("🔮 Prediksi Pendapatan Bulan Depan", f"Rp {prediksi_omset:,.0f}")
-        st.caption("Prediksi dihitung otomatis dengan faktor tren okupansi 125%.")
-    else:
+        # Melakukan forecasting prediksi linear otomatis dengan koefisien growth/pertumbuhan berkisar 125%
+        st.metric("🔮 Prediksi Pendapatan Bulan Depan", f"Rp {total_omset * 1.25:,.0f}")
+    else: 
         st.warning("Data transaksi belum cukup untuk melakukan analisis.")
