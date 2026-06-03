@@ -103,7 +103,6 @@ if menu == "Dashboard":
     st.markdown("---")
     st.subheader("📊 Analisis Grafik Pendapatan Tipe Kamar")
     
-    # Mengganti Matplotlib dengan Grafik Bawaan Streamlit (Bebas Error)
     df_rev = pd.DataFrame(st.session_state.reservasi_db)
     if not df_rev.empty:
         df_chart = df_rev.groupby('tipe')['total_biaya'].sum()
@@ -167,7 +166,7 @@ elif menu == "📝 Reservasi Baru":
         st.markdown("---")
         st.subheader("🎁 Additional Services (Add-Ons)")
         addons_pilihan = []
-        if st.checkbox("🍳 Breakfast Tambahan (Rp 50.000)"): addons_pilihan.append("Breakfast")
+        if st.checkbox("🍳 Breakfast Tambahan (Rp 50.000)"): addons_pappend("Breakfast")
         if st.checkbox("🛏️ Extra Bed (Rp 100.000)"): addons_pilihan.append("Extra Bed")
         if st.checkbox("🚗 Airport Pickup (Rp 150.000)"): addons_pilihan.append("Airport Pickup")
         if st.checkbox("🧺 Laundry Service (Rp 75.000)"): addons_pilihan.append("Laundry")
@@ -187,22 +186,82 @@ elif menu == "📝 Reservasi Baru":
             st.success("Data Tersimpan! Silakan klik Menu '💳 Pembayaran' di sidebar untuk bayar.")
 
 # ==========================================
-# MENU 3: DAFTAR KAMAR
+# MENU 3: DAFTAR KAMAR (UPDATED CLASSIFICATION)
 # ==========================================
 elif menu == "🏨 Daftar Kamar":
-    st.title("🏨 Daftar Spesifikasi & Informasi Kamar")
+    st.title("🏨 Klasifikasi & Spesifikasi Kamar")
+    st.caption("Panduan lengkap kategori kamar berdasarkan standar manajemen hotel.")
+    st.markdown("---")
     
-    tipe_cards = {
-        "Standard Room": {"harga": "Rp 300.000", "kap": "1-2 Orang", "f": "AC, TV LED, WiFi, Air Mineral"},
-        "Deluxe Room": {"harga": "Rp 500.000", "kap": "2-3 Orang", "f": "Smart TV, WiFi, Breakfast, Hair Dryer"},
-        "Family Room": {"harga": "Rp 800.000", "kap": "4-5 Orang", "f": "2 Queen Bed, Smart TV, Sofa, Breakfast"},
-        "Suite Room": {"harga": "Rp 1.200.000", "kap": "2-4 Orang", "f": "Living Room, Mini Bar, Bathtub, Balkon"}
-    }
+    # Membuat 3 Tab Kategori Utama
+    tab1, tab2, tab3 = st.tabs([
+        "✨ Berdasarkan Fasilitas & Ukuran", 
+        "🛏️ Berdasarkan Jenis Tempat Tidur", 
+        "🚪 Berdasarkan Tata Letak Ruangan"
+    ])
     
-    for tk, val in tipe_cards.items():
-        with st.expander(f"⚙️ {tk} — {val['harga']} / Malam"):
-            st.write(f"**Kapasitas:** {val['kap']}")
-            st.write(f"**Fasilitas:** {val['f']}")
+    with tab1:
+        st.subheader("Kategori Kamar Sesuai Fasilitas & Dimensi")
+        
+        with st.expander("🔹 Standard Room (Rp 300.000 / Malam)"):
+            st.markdown("""
+            * **Deskripsi:** Kelas kamar paling dasar dengan fasilitas esensial.
+            * **Fasilitas Utama:** Tempat tidur, AC, TV LED, WiFi, Air Mineral, dan Kamar Mandi Dalam.
+            * **Kapasitas:** 1-2 Orang.
+            """)
+            
+        with st.expander("🔹 Superior Room (Rp 450.000 / Malam)"):
+            st.markdown("""
+            * **Deskripsi:** Sedikit lebih baik dari tipe standard.
+            * **Keunggulan:** Menawarkan ruangan yang lebih luas dengan interior atau pemandangan yang lebih baik.
+            * **Fasilitas Utama:** Fasilitas standard ditambah pilihan view jendela/balkon standar.
+            """)
+            
+        with st.expander("🔹 Deluxe Room (Rp 500.000 / Malam)"):
+            st.markdown("""
+            * **Deskripsi:** Kamar yang berukuran lebih luas dari tipe superior dengan desain elegan.
+            * **Fasilitas Utama:** Smart TV, WiFi, Free Breakfast, Hair Dryer, Mini Fridge, Coffee Maker, area duduk atau meja kerja.
+            * **Kapasitas:** 2-3 Orang.
+            """)
+            
+        with st.expander("🔹 Suite Room (Rp 1.200.000 / Malam)"):
+            st.markdown("""
+            * **Deskripsi:** Kategori mewah di mana kamar tidur terpisah secara fisik dari ruang tamu. Tipe tertinggi dari kategori ini sering disebut *Presidential Suite*.
+            * **Fasilitas Utama:** Living Room (Ruang Tamu), Smart TV 55", Mini Bar, Bathtub, Balkon pribadi, Premium Breakfast.
+            * **Kapasitas:** 2-4 Orang.
+            """)
+
+    with tab2:
+        st.subheader("Pilihan Konfigurasi Tempat Tidur (Bed)")
+        
+        col_b1, col_b2, col_b3 = st.columns(3)
+        with col_b1:
+            st.info("### 🧍 Single Room")
+            st.markdown("**Spesifikasi:**\nKamar dengan satu tempat tidur ukuran *single*. Sangat cocok untuk *solo traveler* atau perjalanan bisnis mandiri.")
+        with col_b2:
+            st.info("### 👥 Double Room")
+            st.markdown("**Spesifikasi:**\nKamar dengan satu tempat tidur berukuran besar (*double*, *queen*, atau *king*) yang diperuntukkan bagi dua orang.")
+        with col_b3:
+            st.info("### 👥 Twin Room")
+            st.markdown("**Spesifikasi:**\nKamar yang dilengkapi dengan dua tempat tidur *single* terpisah. Sering dipilih untuk rekan kerja atau pertemanan.")
+
+    with tab3:
+        st.subheader("Arsitektur & Tata Letak Interior Kamar")
+        
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            st.success("### 🚪 Connecting Room")
+            st.markdown("""
+            * **Karakteristik:** Dua kamar terpisah berdampingan yang memiliki pintu penghubung di bagian dalam.
+            * **Rekomendasi:** Sangat cocok untuk liburan keluarga besar yang menginginkan privasi sekaligus aksesibilitas mudah.
+            """)
+        with col_t2:
+            st.success("### 👨‍👩‍👧 Family Room (Rp 800.000 / Malam)")
+            st.markdown("""
+            * **Karakteristik:** Kamar berukuran besar yang dirancang khusus untuk rombongan keluarga.
+            * **Fasilitas Utama:** Biasanya dilengkapi beberapa tempat tidur ekstra (2 Queen Bed), Sofa besar, Breakfast untuk 4 orang, dan akses Area Bermain Anak.
+            * **Kapasitas:** 4-5 Orang.
+            """)
 
 # ==========================================
 # MENU 4: ROOM MAP
