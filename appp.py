@@ -442,27 +442,58 @@ elif pilihan_menu == "🏷️ Info Voucher Promo":
     with col_p2:
         st.warning("### Code: SMART10\nDiskon potongan hemat 10% khusus pengguna kartu kredit.")
 
-# --- MENU 12: ULASAN DAN TESTIMONI TAMU ---
+# --- MENU12: DASHBOARD FEEDBACK PELANGGAN ---
 elif pilihan_menu == "⭐ Ulasan Kepuasan":
-    st.title("⭐ Feedback & Ulasan Tamu")
-    with st.form("Form_Ulasan"):
-        u_nama = st.text_input("Nama Pengulas:")
-        u_skor = st.slider("Bintang Kepuasan:", 1, 5, 5)
-        u_teks = st.text_area("Isi Ulasan:")
-        if st.form_submit_button("Kirim Review"):
-            if u_nama and u_teks:
-                # Masukin data feedback baru ke array ulasan_log
-                st.session_state.ulasan_log.append({
-                    "nama": u_nama, "rating": u_skor, "komentar": u_teks, "tanggal": str(date.today())
-                })
-                st.success("Ulasan berhasil dikirim!")
-                st.rerun()
-                
-    st.markdown("---")
-    # Looping tampilin ulasan terbalik (ulasan terbaru muncul paling atas)
-    for r in reversed(st.session_state.ulasan_log):
-        st.markdown(f"**{r['nama']}** — {'⭐' * r['rating']} ({r['tanggal']})")
-        st.caption(f"\"{r['komentar']}\"")
+    st.title("📊 Dashboard Feedback Pelanggan")
+
+    # Jika belum ada data
+    if not st.session_state.ulasan_log:
+        st.info("Belum ada data ulasan pelanggan.")
+    else:
+        data = st.session_state.ulasan_log
+
+        # ==========================================
+        # METRIC RINGKASAN
+        # ==========================================
+        total_ulasan = len(data)
+        rata_rating = sum([u["rating"] for u in data]) / total_ulasan
+        rating_tertinggi = max([u["rating"] for u in data])
+        rating_terendah = min([u["rating"] for u in data])
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Ulasan", total_ulasan)
+        col2.metric("Rata-rata Rating", f"{rata_rating:.2f} ⭐")
+        col3.metric("Tertinggi", f"{rating_tertinggi} ⭐")
+        col4.metric("Terendah", f"{rating_terendah} ⭐")
+
+        st.markdown("---")
+
+        # ==========================================
+        # DISTRIBUSI RATING (GRAFIK)
+        # ==========================================
+        import pandas as pd
+
+        df = pd.DataFrame(data)
+        rating_count = df["rating"].value_counts().sort_index()
+
+        st.subheader("📈 Distribusi Rating")
+        st.bar_chart(rating_count)
+
+        st.markdown("---")
+
+        # ==========================================
+        # ULASAN TERBARU
+        # ==========================================
+        st.subheader("📝 Ulasan Terbaru")
+
+        for r in reversed(data[-5:]):  # tampilkan 5 terbaru
+            st.markdown(f"""
+            <div style="background:#1E293B; padding:10px; border-radius:10px; margin-bottom:10px;">
+                <b>{r['nama']}</b> — {'⭐'*r['rating']} <br>
+                <small>{r['tanggal']}</small><br>
+                <i>"{r['komentar']}"</i>
+            </div>
+            """, unsafe_allow_html=True)
 
 # --- MENU 13: GRAFIK FINANSIAL OMSET ---
 elif pilihan_menu == "📊 Analisis Keuangan":
