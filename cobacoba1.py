@@ -159,118 +159,122 @@ pilihan_menu = st.sidebar.radio("🧭 NAVIGASI PANEL", semua_menu)
 # ==========================================
 # LOGIKA OPERASIONAL PER HALAMAN MENU
 # ==========================================
-
 # --- MENU 1: DASHBOARD SUMMARY ---
-st.markdown("## 🏨 Denara Hotel Dashboard")
+if pilihan_menu == "Dashboard":
 
-c1, c2, c3, c4 = st.columns(4)
+    total_kmr = len(st.session_state.kamar_data)
+    isi = sum(1 for k in st.session_state.kamar_data.values() if "Terisi" in k["status"])
+    kosong = total_kmr - isi
 
-def card(title, value, color):
-    st.markdown(f"""
-    <div class="card">
-        <h4>{title}</h4>
-        <h2 style='color:{color}'>{value}</h2>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("## 🏨 Denara Hotel Dashboard")
 
-with c1:
-    card("Kamar Kosong", kosong, "#22C55E")
+    c1, c2, c3, c4 = st.columns(4)
 
-with c2:
-    card("Kamar Terisi", isi, "#EF4444")
+    def card(title, value, color):
+        st.markdown(f"""
+        <div class="card">
+            <h4>{title}</h4>
+            <h2 style='color:{color}'>{value}</h2>
+        </div>
+        """, unsafe_allow_html=True)
 
-with c3:
-    card("Transaksi", len(st.session_state.reservasi_log), "#3B82F6")
+    with c1:
+        card("Kamar Kosong", kosong, "#22C55E")
 
-with c4:
-    card("Room Service", len(st.session_state.makanan_log), "#F59E0B")
-    
+    with c2:
+        card("Kamar Terisi", isi, "#EF4444")
+
+    with c3:
+        card("Transaksi", len(st.session_state.reservasi_log), "#3B82F6")
+
+    with c4:
+        card("Room Service", len(st.session_state.makanan_log), "#F59E0B")
+
     st.markdown("---")
     st.subheader("📢 Promo Event Hari Ini")
     st.info("Info kupon aktif: Ketik kode **DENARADEAL** pas kasir buat potong harga Rp 100.000!")
+elif pilihan_menu == "📝 Reservasi Baru":
 
-# --- MENU 2: INPUT RESERVASI BARU ---
-col1, col2 = st.columns([2,1])
+    col1, col2 = st.columns([2,1])
 
-with col1:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    with col1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    nama = st.text_input("Nama")
-    tipe = st.selectbox("Tipe Kamar", list(TARIF.keys()))
-    tamu = st.number_input("Jumlah Tamu",1,10)
+        nama = st.text_input("Nama")
+        hp = st.text_input("No HP")
+        email = st.text_input("Email")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        pilihan_tipe_kamar = st.selectbox("Tipe Kamar", list(TARIF_KAMAR.keys()))
+        pilihan_bed = st.selectbox("Tipe Kasur", ["Single Bed","Double Bed","Twin Bed"])
 
-with col2:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+        jml_tamu = st.number_input("Jumlah Tamu",1,10)
 
-    st.subheader("🤖 AI Recommendation")
+        tgl_in = st.date_input("Check-in")
+        tgl_out = st.date_input("Check-out")
 
-    if tamu <= 2:
-        st.success("Cocok untuk Standard Room")
-    elif tamu <=4:
-        st.info("Cocok untuk Deluxe")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+
+        st.subheader("🤖 AI Recommendation")
+
+        if jml_tamu <= 2:
+            st.success("Cocok untuk Standard Room")
+        elif jml_tamu <=4:
+            st.info("Cocok untuk Deluxe")
+        else:
+            st.warning("Gunakan Family / Suite")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # VALIDASI
+    valid_rekomendasi = True
+    pesan_saran = ""
+
+    if pilihan_tipe_kamar == "Standard Room" and jml_tamu > 2:
+        valid_rekomendasi = False
+        pesan_saran = "⚠️ Maks 2 orang"
+
+    elif jml_tamu > 4 and pilihan_tipe_kamar in ["Standard Room","Deluxe Room"]:
+        valid_rekomendasi = False
+        pesan_saran = "💡 Gunakan Family/Suite"
+
+    if not valid_rekomendasi:
+        st.warning(pesan_saran)
     else:
-        st.warning("Gunakan Family / Suite")
+        st.success("Pilihan sesuai")
 
-    st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Aturan 1: Cek kapasitas orang untuk tipe kamar standard
-        if pilihan_tipe_kamar == "Standard Room" and jml_tamu > 2:
-            valid_rekomendasi = False
-            pesan_saran = "⚠️ Kapasitas Standard Room maks. 2 orang. Disarankan pindah ke Deluxe/Family."
-            
-        # Aturan 2: Cek ketersediaan tipe kasur twin bed di kamar standard
-        elif pilihan_tipe_kamar == "Standard Room" and pilihan_bed == "Twin Bed":
-            valid_rekomendasi = False
-            pesan_saran = "⚠️ Slot Twin Bed untuk tipe Standard terbatas saat ini. Disarankan memakai Double Bed atau pilih tipe Deluxe."
-            
-        # Aturan 3: Cek rombongan besar biar ga sumpek di kamar kecil
-        elif jml_tamu > 4 and pilihan_tipe_kamar in ["Standard Room", "Deluxe Room"]:
-            valid_rekomendasi = False
-            pesan_saran = "💡 Jumlah tamu banyak (>4 orang). Direkomendasikan ganti ke Family atau Suite Room."
+    # AUTO KAMAR
+    kamar_cocok = None
+    for no, detail in st.session_state.kamar_data.items():
+        if detail["tipe"] == pilihan_tipe_kamar and detail["status"] == "🟩 Tersedia":
+            kamar_cocok = no
+            break
 
-        # Munculin status notifikasi hasil filter validasi ke layar
-        if not valid_rekomendasi:
-            st.warning(pesan_saran)
-        else:
-            st.success("✨ Pilihan kombinasi tipe kamar, kasur, dan kapasitas tamu sudah sesuai standar manufaktur hotel.")
+    if kamar_cocok:
+        st.success(f"Kamar: {kamar_cocok}")
+    else:
+        st.error("Penuh")
 
-        st.markdown("---")
-        st.subheader("⚙️ Alokasi Kamar Fisik (Auto)")
-        
-        # Proses looping mencari nomor kamar kosong terendah yang tipenya sesuai request
-        kamar_cocok = None
-        for no, detail in st.session_state.kamar_data.items():
-            if detail["tipe"] == pilihan_tipe_kamar and detail["status"] == "🟩 Tersedia":
-                kamar_cocok = no
-                break
-                
-        # Kasih feedback status pencarian nomor kamar otomatisnya
-        if kamar_cocok:
-            st.success(f"Kamar Terkunci Otomatis: **Nomor {kamar_cocok}** ({st.session_state.kamar_data[kamar_cocok]['view']})")
-        else:
-            st.error("Kamar tipe ini penuh!")
-            kamar_cocok = st.text_input("Ketik Manual Nomor Kamar Cadangan:")
-            
-        st.markdown("---")
-        st.subheader("🎁 Layanan Tambahan")
-        addons = []
-        if st.checkbox("Sarapan Pagi Buffet (+Rp 50.000)"): addons.append("Breakfast")
-        if st.checkbox("Jemputan Bandara (+Rp 150.000)"): addons.append("Airport Pickup")
-
-    # Tombol klik buat nge-lock data form bookingan dan dioper ke kasir
-    if st.button("Kunci Pemesanan & Lanjut Bayar ➡️", type="primary"):
+    # BUTTON
+    if st.button("Lanjut Kasir"):
         if not nama or not kamar_cocok:
-            st.error("Nama tamu dan nomor kamar wajib diisi!")
+            st.error("Data belum lengkap")
         else:
-            # Nyimpan data sementara ke laci temporary 'proses_checkout'
             st.session_state.proses_checkout = {
-                "nama": nama, "hp": hp, "email": email, "kamar": kamar_cocok, 
-                "tipe": pilihan_tipe_kamar, "bed_type": pilihan_bed,
-                "check_in": str(tgl_in), "check_out": str(tgl_out), "add_ons": addons, "late_checkout": pilihan_late
+                "nama": nama,
+                "hp": hp,
+                "email": email,
+                "kamar": kamar_cocok,
+                "tipe": pilihan_tipe_kamar,
+                "bed_type": pilihan_bed,
+                "check_in": str(tgl_in),
+                "check_out": str(tgl_out),
+                "add_ons": [],
+                "late_checkout": "Normal"
             }
-            st.success("Data masuk antrean kasir. Silakan klik menu '💳 Kasir & Pembayaran' di sidebar.")
+            st.success("Masuk kasir")
 
 # --- MENU 3: KATALOG INFO KAMAR ---
 elif pilihan_menu == "🏨 Daftar Katalog Kamar":
