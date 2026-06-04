@@ -161,21 +161,29 @@ pilihan_menu = st.sidebar.radio("🧭 NAVIGASI PANEL", semua_menu)
 # ==========================================
 
 # --- MENU 1: DASHBOARD SUMMARY ---
-if pilihan_menu == "Dashboard":
-    st.title("🏠 Dashboard Summary")
-    
-    # Hitung jumlah kondisi kamar saat ini secara realtime dari memori
-    total_kmr = len(st.session_state.kamar_data)
-    isi = sum(1 for d in st.session_state.kamar_data.values() if d["status"] == "🟥 Terisi")
-    book = sum(1 for d in st.session_state.kamar_data.values() if d["status"] == "🟨 Booking")
-    kosong = total_kmr - isi - book
-    
-    # Render tampilan info angka kotak-kotak di atas dashboard
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Kamar Kosong Ready 🟩", kosong)
-    c2.metric("Kamar Aktif Terisi 🟥", isi)
-    c3.metric("Total Data Transaksi", len(st.session_state.reservasi_log))
-    c4.metric("Antrean Dapur 🍽️", len(st.session_state.makanan_log))
+st.markdown("## 🏨 Denara Hotel Dashboard")
+
+c1, c2, c3, c4 = st.columns(4)
+
+def card(title, value, color):
+    st.markdown(f"""
+    <div class="card">
+        <h4>{title}</h4>
+        <h2 style='color:{color}'>{value}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c1:
+    card("Kamar Kosong", kosong, "#22C55E")
+
+with c2:
+    card("Kamar Terisi", isi, "#EF4444")
+
+with c3:
+    card("Transaksi", len(st.session_state.reservasi_log), "#3B82F6")
+
+with c4:
+    card("Room Service", len(st.session_state.makanan_log), "#F59E0B")
     
     st.markdown("---")
     st.subheader("📢 Promo Event Hari Ini")
