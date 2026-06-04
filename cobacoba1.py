@@ -8,58 +8,37 @@ from datetime import datetime, date
 # Setingan awal layout browser biar melebar
 st.markdown("""
 <style>
+/* Base Theme */
+.main { background-color: #FDF2F8; }
+section[data-testid="stSidebar"] { background-color: #FCE7F3; }
 
-/* BACKGROUND */
-.main {
-    background-color: #0F172A;
-}
-
-/* SIDEBAR */
-section[data-testid="stSidebar"] {
-    background-color: #020617;
-}
-
-/* CARD */
+/* Styling Card */
 .card {
-    background-color: #1E293B;
+    background-color: #FFFFFF;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    border: 1px solid #FBCFE8;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* TITLE */
-h1, h2, h3 {
-    color: #E2E8F0;
-}
+/* Typography */
+h1, h2, h3 { color: #831843; }
+p, label { color: #9D174D; }
 
-/* TEXT */
-p, label {
-    color: #CBD5F5;
-}
-
-/* BUTTON */
+/* Buttons & Inputs */
 .stButton>button {
-    background: linear-gradient(90deg, #3B82F6, #6366F1);
+    background-color: #DB2777;
     color: white;
-    border-radius: 10px;
-    height: 45px;
+    border-radius: 8px;
+    border: none;
     font-weight: bold;
 }
-
-/* INPUT */
-input, .stSelectbox {
-    background-color: #1E293B !important;
-    color: white !important;
+.stTextInput > div > div > input, .stSelectbox > div > div {
+    background-color: #FFF1F2 !important;
+    border: 1px solid #FECDD3 !important;
 }
-
 </style>
 """, unsafe_allow_html=True)
-st.set_page_config(
-    page_title="Denara Hotel System",
-    layout="wide",
-    page_icon="🏨"
-)
-
 
 # ==========================================
 # INISIALISASI DATA SIMULASI (SESSION STATE)
