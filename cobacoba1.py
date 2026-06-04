@@ -190,29 +190,30 @@ with c4:
     st.info("Info kupon aktif: Ketik kode **DENARADEAL** pas kasir buat potong harga Rp 100.000!")
 
 # --- MENU 2: INPUT RESERVASI BARU ---
-elif pilihan_menu == "📝 Reservasi Baru":
-    st.title("📝 Input Reservasi Tamu Baru")
-    # Bagi layar jadi kolom kiri (form) dan kolom kanan (rekomendasi & alokasi)
-    col_kiri, col_kanan = st.columns([1.5, 1])
-    
-    with col_kiri:
-        st.subheader("Biodata Isian Tamu")
-        nama = st.text_input("Nama Lengkap")
-        hp = st.text_input("No HP / WhatsApp")
-        email = st.text_input("Email Tamu")
-        pilihan_tipe_kamar = st.selectbox("Tipe Kamar", list(TARIF_KAMAR.keys()))
-        pilihan_bed = st.selectbox("Jenis Bed Kasur", ["Single Bed", "Double Bed", "Twin Bed"])
-        jml_tamu = st.number_input("Jumlah Orang Menginap", min_value=1, max_value=10, value=1)
-        tgl_in = st.date_input("Tanggal Check-In", date.today())
-        tgl_out = st.date_input("Tanggal Check-Out", date.today() + pd.Timedelta(days=1))
-        pilihan_late = st.selectbox("Request Jam Check-Out", ["Normal Check-Out", "Late Check-Out (+Rp 50.000)"])
-        
-    with col_kanan:
-        # Bagian pengecekan aturan otomatis kelayakan kamar
-        st.subheader("🤖 Smart Room Recommendation")
-        
-        valid_rekomendasi = True
-        pesan_saran = ""
+col1, col2 = st.columns([2,1])
+
+with col1:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
+    nama = st.text_input("Nama")
+    tipe = st.selectbox("Tipe Kamar", list(TARIF.keys()))
+    tamu = st.number_input("Jumlah Tamu",1,10)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col2:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
+    st.subheader("🤖 AI Recommendation")
+
+    if tamu <= 2:
+        st.success("Cocok untuk Standard Room")
+    elif tamu <=4:
+        st.info("Cocok untuk Deluxe")
+    else:
+        st.warning("Gunakan Family / Suite")
+
+    st.markdown('</div>', unsafe_allow_html=True)
         
         # Aturan 1: Cek kapasitas orang untuk tipe kamar standard
         if pilihan_tipe_kamar == "Standard Room" and jml_tamu > 2:
