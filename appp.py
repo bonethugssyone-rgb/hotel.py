@@ -86,26 +86,56 @@ TARIF_KAMAR = {
 # ==========================================
 # SIDEBAR MENU NAVIGATION
 # ==========================================
+# ==========================================
+# SIDEBAR MENU (VERSI RAPIH & TERKELOMPOK)
+# ==========================================
 st.sidebar.markdown("# 🏨 Denara Hotel System")
 st.sidebar.caption("Sistem Log Internal Kontrol")
 st.sidebar.markdown("---")
 
-# Mengelompokkan pilihan menu di sidebar biar rapi
-st.sidebar.markdown("### 🔑 OPERASIONAL KAMAR")
-menu_kamar = ["Dashboard", "📝 Reservasi Baru", "🏨 Daftar Katalog Kamar", "🗺️ Room Map Denah"]
+menu_utama = st.sidebar.radio("📂 Pilih Kategori", [
+    "🏠 Dashboard",
+    "🏨 Manajemen Kamar",
+    "🍽️ Layanan Hotel",
+    "💳 Transaksi & Data",
+    "⭐ Customer Experience",
+    "📊 Laporan & Bantuan"
+])
 
-st.sidebar.markdown("### 🍽️ LAYANAN TAMBAHAN")
-menu_layanan = ["🍽️ Room Service (DenaraEats)"]
+# Sub menu dinamis
+if menu_utama == "🏠 Dashboard":
+    pilihan_menu = "Dashboard"
 
-st.sidebar.markdown("### 💼 BACKOFFICE ADM")
-menu_admin = ["🔍 Cari Reservasi", "📋 Data Master Log", "💳 Kasir & Pembayaran", "📜 Histori Transaksi"]
+elif menu_utama == "🏨 Manajemen Kamar":
+    pilihan_menu = st.sidebar.radio("Menu Kamar", [
+        "📝 Reservasi Baru",
+        "🏨 Daftar Katalog Kamar",
+        "🗺️ Room Map Denah"
+    ])
 
-st.sidebar.markdown("### 💎 INTERAKSI & LOYALITAS")
-menu_loyalty = ["👤 Poin Loyalitas VIP", "🏷️ Info Voucher Promo", "⭐ Ulasan Kepuasan", "📊 Analisis Keuangan", "🛟 Pusat Bantuan"]
+elif menu_utama == "🍽️ Layanan Hotel":
+    pilihan_menu = "🍽️ Room Service (DenaraEats)"
 
-# Satukan semua menu dan pasang ke widget pilihan radio sidebar
-semua_menu = menu_kamar + menu_layanan + menu_admin + menu_loyalty
-pilihan_menu = st.sidebar.radio("🧭 NAVIGASI PANEL", semua_menu)
+elif menu_utama == "💳 Transaksi & Data":
+    pilihan_menu = st.sidebar.radio("Menu Transaksi", [
+        "💳 Kasir & Pembayaran",
+        "🔍 Cari Reservasi",
+        "📋 Data Master Log",
+        "📜 Histori Transaksi"
+    ])
+
+elif menu_utama == "⭐ Customer Experience":
+    pilihan_menu = st.sidebar.radio("Menu Customer", [
+        "⭐ Ulasan Kepuasan",
+        "👤 Poin Loyalitas VIP",
+        "🏷️ Info Voucher Promo"
+    ])
+
+elif menu_utama == "📊 Laporan & Bantuan":
+    pilihan_menu = st.sidebar.radio("Menu Laporan", [
+        "📊 Analisis Keuangan",
+        "🛟 Pusat Bantuan"
+    ])
 
 # ==========================================
 # LOGIKA OPERASIONAL PER HALAMAN MENU
