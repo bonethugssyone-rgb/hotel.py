@@ -7,6 +7,14 @@ from datetime import datetime, date  # Library bawaan Python untuk mengolah data
 
 # Mengonfigurasi properti dasar halaman web Streamlit (Judul tab browser, tata letak melebar, dan ikon hotel)
 st.set_page_config(page_title="SmartStay Hotel System", layout="wide", page_icon="🏨")
+st.markdown("""
+    <style>
+    .main {background-color: #f5f7f9;}
+    .stMetric {background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+    h1 {color: #1f77b4;}
+    .stButton>button {width: 100%; border-radius: 5px; font-weight: bold;}
+    </style>
+    """, unsafe_allow_html=True)
 
 # ==============================================================================
 # 1. INISIALISASI DATA AWAL (MOCK DATA) DI MEMORI RUNTIME STREAMLIT (SESSION STATE)
@@ -76,8 +84,18 @@ menu = st.sidebar.radio("🏠 MENU UTAMA APLIKASI", [
 # ==============================================================================
 # MENU 1: DASHBOARD UTAMA (REAL-TIME METRICS & GRAPHICS)
 # ==============================================================================
-if menu == "Dashboard":
-    st.title("🏠 Dashboard Real-Time")  # Menampilkan judul halaman dashboard utama
+elif menu == "Dashboard":
+    st.title("🏠 Dashboard Real-Time")
+    
+    # Masukkan container di sini
+    with st.container():
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        col_m1.metric("Total Kamar", total_kmr)
+        col_m2.metric("Tingkat Hunian", f"{(terisi/total_kmr)*100:.0f}%")
+        col_m3.metric("Pendapatan", f"Rp {int(pendapatan_total):,}")
+        col_m4.metric("Rating", f"⭐ {avg_rating:.1f}")
+    
+    # ... (sisanya tetap sesuai logika grafik Anda)
     
     # Menghitung metrik ketersediaan kamar secara dinamis dari dictionary 'kamar_db'
     total_kmr = len(st.session_state.kamar_db)  # Total kapasitas seluruh kamar hotel
@@ -265,18 +283,19 @@ elif menu == "🏨 Daftar Kamar":
 # MENU 4: ROOM MAP (PETA VISUAL STATUS DIGITAL REAL-TIME)
 # ==============================================================================
 elif menu == "🗺️ Room Map":
-    st.title("🗺️ Visual Room Map Status")
-    cols = st.columns(4)  # Menyusun grid denah peta kamar menjadi formasi 4 kolom kesamping
-    # Melakukan perulangan untuk mengambil nomor kamar dan datanya dari session state
-    for idx, (no_kmr, data) in enumerate(st.session_state.kamar_db.items()):
-        with cols[idx % 4]:  # Mendistribusikan penempatan kartu kamar secara merata di dalam grid 4 kolom
-            # Memberikan warna box dinamis: Hijau (Tersedia), Merah (Terisi), Kuning (Sudah dibooking)
-            if "Tersedia" in data["status"]:
-                st.success(f"### {no_kmr}\n🟢 Available\n\n*{data['tipe']}*")
-            elif "Terisi" in data["status"]:
-                st.error(f"### {no_kmr}\n🟥 Occupied\n\n*{data['tipe']}*")
-            else:
-                st.warning(f"### {no_kmr}\n🟨 Booked\n\n*{data['tipe']}*")
+    st.title("🗺️ Room Map")
+    cols = st.columns(4)
+    for i, (no_kmr, data) in enumerate(st.session_state.kamar_db.items()):
+        with cols[i % 4]:
+            color = "#28a745" if "Tersedia" in data["status"] else "#dc3545"
+            # Menggunakan HTML agar tampilan lebih modern dan rapi
+            st.markdown(f"""
+            <div style="padding:15px; border: 2px solid {color}; border-radius:10px; margin-bottom:10px; text-align:center;">
+                <h3 style="margin:0;">{no_kmr}</h3>
+                <small>{data['tipe']}</small><br>
+                <b>{data['status']}</b>
+            </div>
+            """, unsafe_allow_html=True)
 
 # ==============================================================================
 # MENU 5: CARI DATA RESERVASI TAMU (REAL-TIME ENGINE SEARCH)
