@@ -6,6 +6,30 @@ from datetime import datetime
 # CONFIG
 # =========================
 st.set_page_config(page_title="Hotel Dashboard", layout="wide")
+st.markdown("""
+    <style>
+    /* Mengubah font agar lebih modern */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Membuat sidebar terlihat lebih clean */
+    [data-testid="stSidebar"] {
+        background-color: #f8f9fa;
+    }
+    
+    /* Styling untuk container agar lebih rapi */
+    .stMetric {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # =========================
 # SESSION STATE INIT
